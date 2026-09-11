@@ -27,7 +27,7 @@ print(bool("abc"))       # True（非空字符串）
 # print(f"{name} 明年 {age + 1} 岁")
 
 # 无需交互的演示：模拟 input() 的返回值
-raw = "25"              # 假设这是 input() 的返回值
+raw = input('请输入年龄：')              # 假设这是 input() 的返回值
 age = int(raw)
 print("明年", age + 1)  # 26
 
@@ -39,3 +39,9 @@ print("我有 " + str(n) + " 个苹果")     # 正确：先转 str
 # ============ 练习 TODO ============
 # 1. 写一个程序：输入半径，计算圆的面积（π 用 3.14，面积 = π * r * r）
 #   提示：radius = float(input("输入半径："))
+
+r = float(input('请输入圆形的半径(单位是：米)：'))
+
+area = 3.14 * r * r
+
+print("圆形的面积为{}平方米".format(area))

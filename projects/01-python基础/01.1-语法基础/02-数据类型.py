@@ -49,3 +49,15 @@ print(not True)         # False
 # ============ 练习 TODO ============
 # 1. 计算 100 秒是多少分钟多少秒
 # 2. 用字符串拼接打印一句话介绍你自己
+
+seconds = 100
+
+m = seconds // 60
+s = seconds % 60
+
+print(f"100秒是{str(m)}分{str(s)}秒")
+
+name = 'bozai'
+age = 25
+
+print("你好！我是" + name + "，今年" + str(age) + "岁。")

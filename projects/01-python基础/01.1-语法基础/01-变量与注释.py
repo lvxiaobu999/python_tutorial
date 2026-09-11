@@ -11,7 +11,7 @@
 
 # ============ 1. 变量赋值 ============
 # 语法：变量名 = 值
-name = "小明"           # 字符串 str
+name: str = "小明"           # 字符串 str
 age = 20                # 整数 int
 height = 1.75           # 小数（浮点数）float
 is_student = True       # 布尔 bool
@@ -43,3 +43,11 @@ age2 = "ok"
 # ============ 练习 TODO ============
 # 1. 创建三个变量，分别存你的名字、年龄、城市，并打印
 # 2. 用 type() 打印它们的类型
+
+my_name = 'bozai'
+my_age = 25
+my_city = 'shanghai'
+
+print(f"{type(my_name)} ----> {my_name}")
+print(f"{type(my_age)} ----> {my_age}")
+print(f"{type(my_city)} ----> {my_city}")
