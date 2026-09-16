@@ -6,6 +6,8 @@ int() / float() / str() / bool()
 """
 
 # ============ 1. 各类型之间的转换 ============
+# int/float/str/bool 是内置构造函数，会尝试把值转换为目标类型。
+# 转换失败会抛出 ValueError，例如 int("abc")。
 print(int("123"))        # 123（字符串 -> 整数）
 print(int(3.99))         # 3（浮点 -> 整数，直接截断，不四舍五入）
 print(float("3.14"))     # 3.14
@@ -14,12 +16,16 @@ print(str(123))          # "123"（整数 -> 字符串）
 print(str(3.14))         # "3.14"
 
 # bool()：什么会转成 False？
+# 0、0.0、空字符串、空容器（[]、{}、set()）和 None 都是假值；
+# 其它常见非空对象是真值。注意 bool("False") 仍然是 True。
 print(bool(0))           # False
 print(bool(""))          # False（空字符串）
 print(bool(1))           # True
 print(bool("abc"))       # True（非空字符串）
 
 # ============ 2. input() 读取输入 ============
+# input(prompt) 会显示提示并等待用户输入，返回值永远是 str。
+# 要做数学运算，必须先 int(...) 或 float(...) 转换。
 # input() 永远返回字符串，需要类型转换。
 # 想试交互版就把下面两行取消注释：
 # name = input("你叫什么名字？")

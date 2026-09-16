@@ -10,7 +10,8 @@
 """
 
 # ============ 1. 变量赋值 ============
-# 语法：变量名 = 值
+# 语法：变量名 = 值。变量名像标签，指向内存中的一个对象。
+# Python 不要求先声明类型；赋什么值，就根据值推断当前类型。
 name: str = "小明"           # 字符串 str
 age = 20                # 整数 int
 height = 1.75           # 小数（浮点数）float
@@ -19,12 +20,14 @@ is_student = True       # 布尔 bool
 print(name, age, height, is_student)
 
 # ============ 2. type() 查看类型 ============
+# type(value) 返回 value 的类型对象，常用于学习和调试。
 print(type(name))        # <class 'str'>
 print(type(age))         # <class 'int'>
 print(type(height))      # <class 'float'>
 print(type(is_student))  # <class 'bool'>
 
 # ============ 3. 变量可以重新赋值（动态类型）============
+# Python 是动态类型语言：同一个变量名之后可以指向不同类型的对象。
 x = 10
 print(x, type(x))        # 10 <class 'int'>
 x = "现在是字符串了"
