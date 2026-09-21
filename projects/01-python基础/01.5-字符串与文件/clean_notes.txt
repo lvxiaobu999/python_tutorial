@@ -1,0 +1,5 @@
+Python 文件操作需要掌握 open() 函数。
+
+with open() 可以自动关闭文件。
+
+读取文件可以使用 read()、readline() 和 readlines()。
