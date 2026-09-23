@@ -106,14 +106,10 @@ class Student:
 
         Student.created_count += 1
 
-    def average(self):
-        if (len(self.scores) == 0):
+    def average(self) -> float:
+        if not self.scores:          # 空列表是 falsy，等价于 len(...) == 0
             return 0
-        total = 0
-        for score in self.scores:
-            total += score
-        
-        return total / len(self.scores)
+        return sum(self.scores) / len(self.scores)
 
     def __repr__(self):
         return f"Student(name='{self.name}', 平均分={self.average()})"
@@ -148,6 +144,8 @@ class Circle(Shape):
 
     def area(self):
         return 3.14159 * self.radius ** 2
+
+
 class Rectangle(Shape):
     def __init__(self, width, height) -> None:
         super().__init__('矩形')
@@ -155,7 +153,7 @@ class Rectangle(Shape):
         self.height = height
 
     def area(self):
-        return self.height * self.width
+        return self.width * self.height
 
 print('练习二答案验证======================')
 # 完成后取消注释验证：
@@ -179,10 +177,13 @@ class Employee:
         self.salary = salary
 
     @classmethod
-    def from_string(cls, text: str) -> Employee:
-        arr = text.split(",")
-        name = arr[0]
-        salary = arr[1]
+    def from_string(cls, text: str) -> "Employee":
+        """解析 "张三,8000" 这样的字符串创建实例。
+
+        返回注解用字符串 "Employee"：类体执行到这里时类还没定义完，
+        直接写裸名在 Python 3.13 及以下会 NameError。
+        """
+        name, salary = text.split(",")    # 元组解包：一次拆成两个变量
         return cls(name, int(salary))
 
 print('练习三答案验证======================')
