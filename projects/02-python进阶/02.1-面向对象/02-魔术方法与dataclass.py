@@ -121,12 +121,11 @@ class Book:
         return round(self.price * rate, 2)
 
 
-book = Book("Python进阶", 59.9)
-book.tags.append("编程")
-print(book)                                  # 自动生成的 __repr__
+book = Book("Python进阶", 59.9)         # 自动生成的 __repr__
 print(book == Book("Python进阶", 59.9))       # False！tags 一个有值一个是空列表
 print(book.discounted_price())               # 47.92
 
+print('================  以下是02-魔术方法与dataclass的打印信息 ==================')
 
 # ============ 练习 1：Money 运算 ============
 # TODO 1：写一个 Money 类：
@@ -135,10 +134,27 @@ print(book.discounted_price())               # 47.92
 #   c. __eq__ 和 __lt__：金额相等 / 比大小；有了 __lt__ 就能 sorted。
 #   d. __repr__：输出 Money(10)。
 
+class Money:
+    def __init__(self, yuan: int) -> None:
+        self.yuan = yuan
+
+    def __add__(self, other:Money):
+        return Money(self.yuan + other.yuan)
+
+    def __eq__(self, other) -> bool:
+        return self.yuan == other.yuan
+
+    def __lt__(self, other) -> bool:
+            return self.yuan < other.yuan
+    def __repr__(self):
+        return f"Money(${self.yuan})"
+
+print("练习 1：Money 运算 答案验证")
 # 完成后取消注释验证：
-# prices = [Money(30), Money(15), Money(42)]
-# print(sorted(prices))                     # 期望 [Money(15), Money(30), Money(42)]
-# print(Money(8) + Money(2) == Money(10))   # 期望 True
+prices = [Money(30), Money(15), Money(42)]
+print(sorted(prices))                     # 期望 [Money(15), Money(30), Money(42)]
+print(Money(8) + Money(2))                # 期望  Money(10)
+print(Money(8) + Money(2) == Money(10))   # 期望 True
 
 
 # ============ 练习 2：容器类 ============
@@ -148,13 +164,28 @@ print(book.discounted_price())               # 47.92
 #   c. __getitem__ 支持下标取任务（这样 for 也能遍历它）。
 #   d. __contains__ 支持 "xx" in todo_list。
 
+class TodoList:
+    def __init__(self) -> None:
+        self.todo_list: list[str] = []
+        pass 
+
+    def add(self, task):
+        self.todo_list.append(task)
+    def __len__(self):
+        return len(self.todo_list)
+    def __getitem__(self, index: int):
+        return self.todo_list[index]
+    def __contains__(self, task: str):
+        return task in self.todo_list
+
+print("练习 2：容器类 答案验证")
 # 完成后取消注释验证：
-# todos = TodoList()
-# todos.add("学完面向对象")
-# todos.add("写作业")
-# print(len(todos))                  # 期望 2
-# print(todos[0])                    # 期望 学完面向对象
-# print("写作业" in todos)           # 期望 True
+todos = TodoList()
+todos.add("学完面向对象")
+todos.add("写作业")
+print(len(todos))                  # 期望 2
+print(todos[0])                    # 期望 学完面向对象
+print("写作业" in todos)           # 期望 True
 
 
 # ============ 练习 3：property 校验 ============
@@ -162,8 +193,40 @@ print(book.discounted_price())               # 47.92
 #   a. @property score + setter：分数必须在 0~100 之间，否则 raise ValueError。
 #   b. @property grade（只读）：>=90 返回 "A"，>=80 "B"，>=70 "C"，>=60 "D"，否则 "E"。
 
+class StudentScore:
+    def __init__(self):
+        pass
+
+    @property
+    def score(self) -> float:
+        return self._score
+
+    @score.setter
+    def score(self, score: float) -> None:
+        if (score < 0 or score > 100):
+            raise ValueError('分数只能在0~100之间')
+        self._score = score
+
+
+    @property
+    def grade(self):
+        if self._score >= 90:
+            return "A"
+        if self._score >= 80:
+            return "B"
+        if self._score >= 70:
+            return "C"
+        if self._score >= 60:
+            return "D"
+        return "E"
+
+
+print("练习 3：property 校验 答案验证")
 # 完成后取消注释验证：
-# s = StudentScore()
-# s.score = 85
-# print(s.grade)                     # 期望 B
-# s.score = 120                      # 期望抛 ValueError
+s = StudentScore()
+s.score = 85
+print(s.grade)                     # 期望 B
+try:
+    s.score = 120                      # 期望抛 ValueError
+except ValueError as error:
+    print(error)
