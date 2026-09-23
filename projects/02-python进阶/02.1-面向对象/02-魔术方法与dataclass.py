@@ -122,7 +122,7 @@ class Book:
 
 
 book = Book("Python进阶", 59.9)         # 自动生成的 __repr__
-print(book == Book("Python进阶", 59.9))       # False！tags 一个有值一个是空列表
+print(book == Book("Python进阶", 59.9))       # True —— dataclass 的 __eq__ 逐字段比较，两边 tags 都是空列表
 print(book.discounted_price())               # 47.92
 
 print('================  以下是02-魔术方法与dataclass的打印信息 ==================')
@@ -138,16 +138,22 @@ class Money:
     def __init__(self, yuan: int) -> None:
         self.yuan = yuan
 
-    def __add__(self, other:Money):
+    def __add__(self, other: "Money") -> "Money":
         return Money(self.yuan + other.yuan)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
+        # 和其他类型比较时返回 NotImplemented 交给对方处理，否则 Money(8) == 8 会抛 AttributeError
+        if not isinstance(other, Money):
+            return NotImplemented
         return self.yuan == other.yuan
 
-    def __lt__(self, other) -> bool:
-            return self.yuan < other.yuan
-    def __repr__(self):
-        return f"Money(${self.yuan})"
+    def __lt__(self, other: "Money") -> bool:
+        if not isinstance(other, Money):
+            return NotImplemented
+        return self.yuan < other.yuan
+
+    def __repr__(self) -> str:
+        return f"Money({self.yuan})"
 
 print("练习 1：Money 运算 答案验证")
 # 完成后取消注释验证：
@@ -167,15 +173,17 @@ print(Money(8) + Money(2) == Money(10))   # 期望 True
 class TodoList:
     def __init__(self) -> None:
         self.todo_list: list[str] = []
-        pass 
 
-    def add(self, task):
+    def add(self, task: str) -> None:
         self.todo_list.append(task)
-    def __len__(self):
+
+    def __len__(self) -> int:
         return len(self.todo_list)
-    def __getitem__(self, index: int):
+
+    def __getitem__(self, index: int) -> str:
         return self.todo_list[index]
-    def __contains__(self, task: str):
+
+    def __contains__(self, task: str) -> bool:
         return task in self.todo_list
 
 print("练习 2：容器类 答案验证")
@@ -194,22 +202,18 @@ print("写作业" in todos)           # 期望 True
 #   b. @property grade（只读）：>=90 返回 "A"，>=80 "B"，>=70 "C"，>=60 "D"，否则 "E"。
 
 class StudentScore:
-    def __init__(self):
-        pass
-
     @property
     def score(self) -> float:
         return self._score
 
     @score.setter
-    def score(self, score: float) -> None:
-        if (score < 0 or score > 100):
-            raise ValueError('分数只能在0~100之间')
-        self._score = score
-
+    def score(self, value: float) -> None:
+        if not 0 <= value <= 100:      # 链式比较，比 score < 0 or score > 100 更直观
+            raise ValueError("分数只能在0~100之间")
+        self._score = value
 
     @property
-    def grade(self):
+    def grade(self) -> str:
         if self._score >= 90:
             return "A"
         if self._score >= 80:
