@@ -84,6 +84,8 @@ for speaker in [Dog("旺财", "柴犬"), Cat("咪咪"), Robot()]:
 
 print(isinstance(Dog("旺财", "柴犬"), Animal))   # True：子类实例也是父类实例
 
+print('================  以下是01-类与继承作业的打印信息 ==================')
+
 
 # ============ 练习 1：Student 类 ============
 class Student:
@@ -96,16 +98,33 @@ class Student:
     d. __repr__：输出 Student(name='xx', 平均分=xx)。
     """
 
+    created_count = 0
+
     def __init__(self, name, scores):
-        raise NotImplementedError("TODO 1：删除这行，按 docstring 完成")
+        self.name = name
+        self.scores = scores
 
+        Student.created_count += 1
 
+    def average(self):
+        if (len(self.scores) == 0):
+            return 0
+        total = 0
+        for score in self.scores:
+            total += score
+        
+        return total / len(self.scores)
+
+    def __repr__(self):
+        return f"Student(name='{self.name}', 平均分={self.average()})"
+
+print('练习一答案验证======================')
 # 完成后取消注释验证：
-# s1 = Student("小明", [85, 92, 78])
-# s2 = Student("小红", [90, 88, 95])
-# print(s1.average())                  # 期望 85.0
-# print(s1)                            # 期望 Student(name='小明', 平均分=85.0)
-# print(Student.created_count)         # 期望 2
+s1 = Student("小明", [85, 92, 78])
+s2 = Student("小红", [90, 88, 95])
+print(s1.average())                  # 期望 85.0
+print(s1)                            # 期望 Student(name='小明', 平均分=85.0)
+print(Student.created_count)         # 期望 2
 
 
 # ============ 练习 2：继承与多态 ============
@@ -115,9 +134,33 @@ class Student:
 #   c. Rectangle(Shape)：__init__ 接收 width/height，area() 返回 width * height。
 #   d. 把三种图形放进同一个列表，循环打印「名字：面积」，体会多态。
 
+class Shape:
+    def __init__(self, name) -> None:
+        self.name = name
+
+    def area(self):
+        return 0
+
+class Circle(Shape):
+    def __init__(self, radius) -> None:
+        super().__init__('圆')
+        self.radius = radius
+
+    def area(self):
+        return 3.14159 * self.radius ** 2
+class Rectangle(Shape):
+    def __init__(self, width, height) -> None:
+        super().__init__('矩形')
+        self.width = width
+        self.height = height
+
+    def area(self):
+        return self.height * self.width
+
+print('练习二答案验证======================')
 # 完成后取消注释验证：
-# for shape in [Circle(2), Rectangle(3, 4), Shape("未知")]:
-#     print(f"{shape.name}：{shape.area():.2f}")
+for shape in [Circle(2), Rectangle(3, 4), Shape("未知")]:
+    print(f"{shape.name}：{shape.area():.2f}")
 # 期望输出：
 # 圆：12.57
 # 矩形：12.00
@@ -130,6 +173,19 @@ class Student:
 #   b. 类方法 from_string(cls, text)：解析 "张三,8000" 这样的字符串创建实例。
 #      提示：text.split(",") 拆开，salary 要 int() 转换。
 
+class Employee:
+    def __init__(self, name: str, salary: int) -> None:
+        self.name = name
+        self.salary = salary
+
+    @classmethod
+    def from_string(cls, text: str) -> Employee:
+        arr = text.split(",")
+        name = arr[0]
+        salary = arr[1]
+        return cls(name, int(salary))
+
+print('练习三答案验证======================')
 # 完成后取消注释验证：
-# e = Employee.from_string("张三,8000")
-# print(e.name, e.salary)             # 期望：张三 8000
+e = Employee.from_string("张三,8000")
+print(e.name, e.salary)             # 期望：张三 8000
