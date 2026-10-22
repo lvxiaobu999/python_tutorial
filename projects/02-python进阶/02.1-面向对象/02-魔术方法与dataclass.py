@@ -7,6 +7,7 @@ property 把「带校验的赋值」伪装成普通属性；dataclass 一行顶�
 from dataclasses import dataclass, field
 
 
+# ============ 演示：基础魔术方法（__repr__/__eq__/__add__/__abs__） ============
 class Vector2D:
     """演示常用魔术方法：让向量像内置类型一样参与运算。"""
 

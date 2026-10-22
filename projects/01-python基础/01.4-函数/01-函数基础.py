@@ -4,11 +4,13 @@
 没有 return 时函数默认返回 None。
 """
 
+# ========== 1、函数示例：默认参数（不传就用默认值） ==========
 def greet(name, prefix="你好"):
     # name 是必填参数，prefix 是有默认值的参数。
     # 调用 greet("小明") 时，prefix 自动使用“你好”。
     return f"{prefix}，{name}！"
 
+# ========== 2、可变参数示例：*args 收集成元组 ==========
 def average(*numbers):
     # *numbers 会把任意数量的位置参数收集成一个元组。
     # 空元组时不能直接除以 len，因此先返回 0。

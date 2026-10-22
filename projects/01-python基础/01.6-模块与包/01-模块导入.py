@@ -9,6 +9,7 @@ from datetime import date
 from calculator import multiply
 from pathlib import Path
 
+# ========== 1、导入标准库示例：import 后用 模块名.成员 ==========
 # math.pi 是 math 模块提供的圆周率常量；** 是幂运算。
 print("圆面积：", math.pi * 3 ** 2)
 # randint(a, b) 会返回包含 a 和 b 的随机整数。
@@ -16,6 +17,7 @@ print("随机数：", random.randint(1, 10))
 # from ... import ... 只导入指定成员，可以直接写 date.today()。
 print("今天：", date.today())
 
+# ========== 2、入口保护示例：__name__ == "__main__" 才执行 ==========
 # 直接运行本文件时 __name__ 等于 "__main__"；被别的文件导入时不等于它。
 # 入口保护可以避免导入模块时意外执行命令行程序代码。
 if __name__ == "__main__":

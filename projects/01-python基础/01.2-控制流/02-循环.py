@@ -4,6 +4,7 @@
 每一轮变量的值如何变化。
 """
 
+# ========== 1、for 循环示例：range 左闭右开 + 累加求和 ==========
 total = 0
 # range(1, 6) 生成一个“可迭代对象”，数字从 1 开始，到 6 之前结束：
 # 1、2、3、4、5。停止值 6 不会被包含，这叫“左闭右开”。
@@ -13,6 +14,7 @@ for number in range(1, 6):
     total += number
 print("1 到 5 的和：", total)
 
+# ========== 2、while 循环示例：条件成立就一直执行 ==========
 count = 3
 # while 在每次循环开始前判断条件；只要 count > 0 就继续执行。
 while count > 0:
@@ -20,6 +22,7 @@ while count > 0:
     # 如果不修改 count，条件会一直为 True，可能形成无限循环。
     count -= 1
 
+# ========== 3、continue 示例：只跳过本轮，进入下一轮 ==========
 # range(1, 11) 产生 1~10；range(起点, 终点) 不包含终点。
 for number in range(1, 11):
     if number % 2 == 0:

@@ -4,6 +4,7 @@
 并支持交集、并集、差集等集合运算。
 """
 
+# ========== 1、字典示例：key -> value 映射（get 兜底不报错） ==========
 user = {"name": "小明", "age": 18}
 # 用字典[key] 写入新键或修改已有键。
 user["city"] = "北京"
@@ -13,6 +14,7 @@ print(user.get("name"), user.get("email", "未填写邮箱"))
 for key, value in user.items():
     print(key, "=", value)
 
+# ========== 2、集合示例：自动去重 + & 交集运算 ==========
 tags = {"python", "ai", "python"}
 # 集合会自动去重，因此 python 只保留一次；集合输出顺序不保证固定。
 print("去重后的标签：", tags)

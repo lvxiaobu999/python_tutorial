@@ -4,6 +4,7 @@
 索引从 0 开始，切片使用 [start:stop:step]，同样不包含 stop。
 """
 
+# ========== 1、列表示例：用 [] 定义（可变） ==========
 fruits = ["apple", "banana", "orange"]
 # append 在列表末尾添加一个元素，列表长度会增加。
 fruits.append("pear")
@@ -13,6 +14,7 @@ print("列表：", fruits)
 # fruits[:2] 等价于 fruits[0:2]，取得第 0、1 个元素，不包含索引 2。
 print("切片：", fruits[:2])
 
+# ========== 2、元组示例：用 () 定义（不可变） ==========
 point = (10, 20)
 # 元组拆包：把两个位置的值依次赋给 x 和 y。
 x, y = point

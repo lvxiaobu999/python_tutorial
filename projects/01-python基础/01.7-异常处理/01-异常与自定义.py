@@ -4,6 +4,7 @@
 except 处理指定异常，else 在没有异常时执行，finally 无论是否出错都会执行。
 """
 
+# ============ 示例：try/except/else/finally 完整流程 ============
 def parse_age(value):
     try:
         # int("abc") 会抛 ValueError；下面主动 raise 也会进入 except。
