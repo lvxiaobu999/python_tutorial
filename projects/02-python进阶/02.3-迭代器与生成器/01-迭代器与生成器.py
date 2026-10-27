@@ -5,6 +5,7 @@
 """
 
 from itertools import islice
+from pathlib import Path
 
 
 # ============ 演示 1：手写迭代器类（理解协议） ============
@@ -44,8 +45,8 @@ def fibonacci():
     a, b = 0, 1
     while True:                   # 无限循环没问题：没人要就不算
         yield a
-        a, b = b, a + b
-
+        a, b = b, a + b     # c = a; a=b, b = c + b
+       
 
 print(list(islice(fibonacci(), 10)))   # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
 
@@ -71,13 +72,18 @@ def flatten(nested: list) :
 print(list(flatten([1, [2, 3, [4, [5]]], 6])))   # [1, 2, 3, 4, 5, 6]
 
 
+print("============ 以下是案例作业答案验证 ============")
+
 # ============ 练习 1：无限生成器 ============
 # TODO 1：写 naturals(start=1)：无限产出 start, start+1, start+2, ...
 #   然后用 islice(naturals(100), 5) 取前 5 个，期望 [100, 101, 102, 103, 104]。
 #
-# def naturals(start=1):
-#     ...
+def naturals(start=1):
+    while True:
+        yield start
+        start += 1
 
+print(list(islice(naturals(100), 5)))
 
 # ============ 练习 2：流式读文件 ============
 # TODO 2：写生成器 read_lines(path)，逐行产出「去掉首尾空白后的行」：
@@ -88,13 +94,42 @@ print(list(flatten([1, [2, 3, [4, [5]]], 6])))   # [1, 2, 3, 4, 5, 6]
 #
 # 期望效果（举例）：
 # print(count_keyword("test.txt", "python"))   # 输出包含 python 的行数
+base_dir = Path(__file__).parent
+test_path = base_dir / "test.txt"
+
+# d. 自建测试文件："w" 是覆盖写，每次运行都得到干净的测试数据
+with open(test_path, "w", encoding="utf-8") as f:
+    f.write("Python 是解释型语言\n")        # 大写 P —— 等下统计时不计：in 区分大小写
+    f.write("\n")                           # 空行：用来验证「跳过空行」
+    f.write("  我在学 python 生成器 python  \n")    # 带首尾空白：交给 strip 处理
+    f.write("python 真省内存\n")
+    f.write("这行没有关键词\n")
+
+def read_lines(path):
+    with open(path, encoding="utf-8") as f:   # test_path 已是 Path，直接用
+        for line in f:              # 文件对象本身就是惰性迭代器：一次只读一行
+            line = line.strip()     # 去掉行尾换行符和首尾空白
+            if line:                # 空行 strip 后是 ""，为假 → 跳过（要求 b）
+                yield line
+
+# c. 基于 read_lines 统计：sum 给生成器表达式数数，1 表示「这行算一个」
+def count_keyword(path, keyword):
+    # return sum(1 for line in read_lines(path) if keyword in line)
+    # 或者
+    lines = list(read_lines(path))
+    return len(lines)
+
+print(list(read_lines(test_path)))          # 空行没了、首尾空白没了：共 4 行
+print(count_keyword(test_path, "python"))   # 2 —— 注意 "Python" 那行不算（大小写敏感）
+
+
 
 
 # ============ 练习 3：生成器表达式 ============
 # TODO 3：一行代码（用生成器表达式 + sum）：
 #   求 1~100 中所有偶数的平方和。期望结果 171700。
 #
-# print(sum(...))    # 在 ... 处填生成器表达式
+print(sum([i**2 for i in range(0, 101, 2)]))    # 在 ... 处填生成器表达式
 
 
 # ============ 练习 4（选做）：管道 ============
@@ -103,3 +138,14 @@ print(list(flatten([1, [2, 3, [4, [5]]], 6])))   # [1, 2, 3, 4, 5, 6]
 #   第 2 段：把每个数平方（生成器函数）。
 #   第 3 段：sum 汇总。
 # 体会：三段串联，任何时刻内存里只有一个数在流动。
+
+def multiples_of(nums):
+    for i in nums:
+        if (i % 3 == 0):
+            yield i
+
+def square(nums):
+    for n in nums:
+        yield n ** 2
+
+result = sum(square(multiples_of(range(20))))
