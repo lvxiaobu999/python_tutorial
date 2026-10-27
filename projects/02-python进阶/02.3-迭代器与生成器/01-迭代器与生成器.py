@@ -114,10 +114,8 @@ def read_lines(path):
 
 # c. 基于 read_lines 统计：sum 给生成器表达式数数，1 表示「这行算一个」
 def count_keyword(path, keyword):
-    # return sum(1 for line in read_lines(path) if keyword in line)
-    # 或者
-    lines = list(read_lines(path))
-    return len(lines)
+    # 逐行流过逐行判断，任何时刻内存里只有一行 —— 这才是生成器的用法
+    return sum(1 for line in read_lines(path) if keyword in line)
 
 print(list(read_lines(test_path)))          # 空行没了、首尾空白没了：共 4 行
 print(count_keyword(test_path, "python"))   # 2 —— 注意 "Python" 那行不算（大小写敏感）
@@ -129,7 +127,7 @@ print(count_keyword(test_path, "python"))   # 2 —— 注意 "Python" 那行不
 # TODO 3：一行代码（用生成器表达式 + sum）：
 #   求 1~100 中所有偶数的平方和。期望结果 171700。
 #
-print(sum([i**2 for i in range(0, 101, 2)]))    # 在 ... 处填生成器表达式
+print(sum(i**2 for i in range(0, 101, 2)))    # 生成器表达式：[] 换成 ()，边流边算不建列表
 
 
 # ============ 练习 4（选做）：管道 ============
@@ -141,7 +139,7 @@ print(sum([i**2 for i in range(0, 101, 2)]))    # 在 ... 处填生成器表达�
 
 def multiples_of(nums):
     for i in nums:
-        if (i % 3 == 0):
+        if i % 3 == 0:            # 条件外面不需要括号
             yield i
 
 def square(nums):
@@ -149,3 +147,4 @@ def square(nums):
         yield n ** 2
 
 result = sum(square(multiples_of(range(20))))
+print(result)    # 819 —— 0,3,6,9,12,15,18 的平方和，管道流动时内存里只有一个数
