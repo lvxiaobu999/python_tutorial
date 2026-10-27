@@ -7,7 +7,6 @@ property 把「带校验的赋值」伪装成普通属性；dataclass 一行顶�
 from dataclasses import dataclass, field
 
 
-# ============ 演示：基础魔术方法（__repr__/__eq__/__add__/__abs__） ============
 class Vector2D:
     """演示常用魔术方法：让向量像内置类型一样参与运算。"""
 
@@ -112,17 +111,28 @@ except ValueError as error:
 
 
 # ============ 演示：dataclass ============
+# @dataclass 做的事：扫一遍下面带类型注解的字段，自动生成三个样板方法——
+#   __init__ → 所以 Book("Python进阶", 59.9) 才能传参；不写它 Book() 不接收任何参数
+#   __repr__ → print(book) 显示 Book(title='Python进阶', price=59.9, tags=[])
+#   __eq__   → 逐字段比较（演示 1 手写过 __eq__，这里交给机器写）
+# 自己定义的方法（如 discounted_price）不受影响，原样保留。
 @dataclass
 class Book:
+    # 字段顺序：必填在前、带默认值的在后 —— 和 01.4「位置 → 默认」口诀一致，
+    # 因为 __init__ 就是按这些字段生成的普通函数。
     title: str
     price: float
-    tags: list[str] = field(default_factory=list)  # 可变默认值的正确写法
+    # 可变默认值的正确写法（01.4 共享陷阱的类版本）：
+    # 写 tags: list[str] = [] 会被 dataclass 直接拒绝（ValueError: mutable default），
+    # default_factory=list 表示「每个实例调用一次 list() 新建空列表」。
+    tags: list[str] = field(default_factory=list)
 
     def discounted_price(self, rate: float = 0.8) -> float:
         return round(self.price * rate, 2)
 
 
-book = Book("Python进阶", 59.9)         # 自动生成的 __repr__
+book = Book("Python进阶", 59.9)         # 能传参 = @dataclass 生成了 __init__
+print(book)                                    # Book(title='Python进阶', price=59.9, tags=[]) —— 自动生成的 __repr__
 print(book == Book("Python进阶", 59.9))       # True —— dataclass 的 __eq__ 逐字段比较，两边 tags 都是空列表
 print(book.discounted_price())               # 47.92
 
