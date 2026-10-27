@@ -115,7 +115,7 @@ print(double(5), triple(5))    # 期望 10 15
 def timer(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        time.perf_counter()
+        start = time.perf_counter()   # 时刻要「接住」存进变量，否则白测了
         result = func(*args, **kwargs)
         print(f"函数 {func.__name__} 耗时 {time.perf_counter() - start:.3f} 秒")
         return result
@@ -144,15 +144,14 @@ def retry(times):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            result = None
-            for _ in range(times):
+            last_error = None
+            for i in range(1, times + 1):        # 从 1 数起，日志给人看
                 try:
-                   if result is None:
-                        result = func(*args, **kwargs)
-                except ConnectionError as error:
-                    print(error)
-                else:
-                    return result
+                    return func(*args, **kwargs)  # 成功：直接返回，不需要哨兵变量
+                except Exception as error:        # 按题目捕 Exception；只捕 ConnectionError 会漏掉其他错误
+                    last_error = error            # 记住最后一个异常，全部失败时上抛
+                    print(f"第 {i} 次尝试失败：{error}")
+            raise last_error                      # 题目 c：循环耗尽还没成功 → 原样上抛
         return wrapper
     return decorator
 
@@ -171,15 +170,36 @@ print(flaky())                 # 期望看到两次重试日志后输出 成功
 #   a. 写普通递归 fib(n)，打印 fib(32) 的耗时。
 #   b. 加上 @functools.lru_cache 再测一次，对比耗时。
 #   c. 想一想：为什么递归 + 缓存会快这么多？（fib(n) 被重复算了多少次？）
-@functools.lru_cache(maxsize=None)
-def fib(n: int) -> int:
+# a. 普通递归版：fib(n) 展开成 fib(n-1)+fib(n-2)，同一个 n 被成千上万次重算
+def fib_plain(n: int) -> int:
     if n == 0:
         return 0
     if n == 1:
         return 1
-    return fib(n-1) + fib(n-2)
+    return fib_plain(n - 1) + fib_plain(n - 2)
 
-time.perf_counter()
-print(fib(32))
-print(fib(32))
-print(f"fib(32) 共耗时 {time.perf_counter() - start:.3f} 秒")
+start = time.perf_counter()          # 每次测量前重新记录，别复用外面的旧 start
+print(fib_plain(32))
+print(f"普通递归 fib(32) 耗时 {time.perf_counter() - start:.3f} 秒")
+
+# b. 加 @lru_cache：每个 n 只真算一次，其余调用直接查表
+@functools.lru_cache(maxsize=None)
+def fib_cached(n: int) -> int:
+    if n == 0:
+        return 0
+    if n == 1:
+        return 1
+    return fib_cached(n - 1) + fib_cached(n - 2)
+
+start = time.perf_counter()
+print(fib_cached(32))
+print(f"缓存版 fib(32) 首次调用耗时 {time.perf_counter() - start:.6f} 秒")
+
+start = time.perf_counter()
+print(fib_cached(32))
+print(f"缓存版 fib(32) 再次调用耗时 {time.perf_counter() - start:.6f} 秒（命中缓存）")
+
+# c. 为什么快这么多？普通递归的总调用次数 T(n) = 2·fib(n+1) − 1：
+#    算 fib(32) 要调用约 705 万次函数——fib(1)、fib(2) 这些底层值被重复算了
+#    几十万几百万遍。加缓存后每个 n 只真算 1 次，总共 33 次调用，其余全是查表，
+#    复杂度从指数级 O(2^n) 降到线性 O(n)。
