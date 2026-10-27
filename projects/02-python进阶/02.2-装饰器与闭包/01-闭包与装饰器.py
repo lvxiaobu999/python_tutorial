@@ -91,13 +91,16 @@ def make_multiplier(n):
 
     提示：函数体只需要 def inner(x): return x * n，然后 return inner。
     """
-    raise NotImplementedError("TODO 1：删除这行，按 docstring 完成")
+    def inner(x):
+        return n * x
+
+    return inner
 
 
 # 完成后取消注释验证：
-# double = make_multiplier(2)
-# triple = make_multiplier(3)
-# print(double(5), triple(5))    # 期望 10 15
+double = make_multiplier(2)
+triple = make_multiplier(3)
+print(double(5), triple(5))    # 期望 10 15
 
 
 # ============ 练习 2：@timer 装饰器 ============
@@ -107,13 +110,24 @@ def make_multiplier(n):
 #   c. 必须：@functools.wraps + return 结果，两者缺一不可。
 #
 # 完成后用它装饰下面的 slow_sum 并调用：
-#
-# @timer
-# def slow_sum(n):
-#     time.sleep(0.3)
-#     return sum(range(n))
-#
-# print(slow_sum(10_000))        # 先打印耗时，再打印 49995000
+
+
+def timer(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        time.perf_counter()
+        result = func(*args, **kwargs)
+        print(f"函数 {func.__name__} 耗时 {time.perf_counter() - start:.3f} 秒")
+        return result
+    
+    return wrapper
+
+@timer
+def slow_sum(n):
+    time.sleep(0.3)
+    return sum(range(n))
+
+print(slow_sum(10_000))        # 先打印耗时，再打印 49995000
 
 
 # ============ 练习 3：带参数的重试装饰器 ============
@@ -124,16 +138,32 @@ def make_multiplier(n):
 #
 # 用下面的函数测试（前两次抛错，第三次成功）：
 #
-# attempts = {"n": 0}
-#
-# @retry(times=3)
-# def flaky():
-#     attempts["n"] += 1
-#     if attempts["n"] < 3:
-#         raise ConnectionError(f"第 {attempts['n']} 次失败")
-#     return "成功"
-#
-# print(flaky())                 # 期望看到两次重试日志后输出 成功
+attempts = {"n": 0}
+
+def retry(times):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            result = None
+            for _ in range(times):
+                try:
+                   if result is None:
+                        result = func(*args, **kwargs)
+                except ConnectionError as error:
+                    print(error)
+                else:
+                    return result
+        return wrapper
+    return decorator
+
+@retry(times=3)
+def flaky():
+    attempts["n"] += 1
+    if attempts["n"] < 3:
+        raise ConnectionError(f"第 {attempts['n']} 次失败")
+    return "成功"
+
+print(flaky())                 # 期望看到两次重试日志后输出 成功
 
 
 # ============ 练习 4（选做）：lru_cache 斐波那契 ============
@@ -141,3 +171,15 @@ def make_multiplier(n):
 #   a. 写普通递归 fib(n)，打印 fib(32) 的耗时。
 #   b. 加上 @functools.lru_cache 再测一次，对比耗时。
 #   c. 想一想：为什么递归 + 缓存会快这么多？（fib(n) 被重复算了多少次？）
+@functools.lru_cache(maxsize=None)
+def fib(n: int) -> int:
+    if n == 0:
+        return 0
+    if n == 1:
+        return 1
+    return fib(n-1) + fib(n-2)
+
+time.perf_counter()
+print(fib(32))
+print(fib(32))
+print(f"fib(32) 共耗时 {time.perf_counter() - start:.3f} 秒")
