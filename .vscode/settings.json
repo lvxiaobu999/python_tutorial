@@ -1,0 +1,13 @@
+{
+    // 保存时自动格式化 Python 代码（只对 .py 文件生效，不影响其他语言）
+    "[python]": {
+        // 格式化器用微软官方的 Black Formatter 插件（已安装，自带 black，无需 pip/uv 装包）
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+    },
+    // 粘贴时自动格式化（只对有格式化器的文件类型生效）
+    "editor.formatOnPaste": true,
+    // Pylance 类型检查强度：off（默认，不检查）/ basic / standard / strict
+    // standard：传错类型的参数会画黄色波浪线，问题面板同步报错
+    "python.analysis.typeCheckingMode": "standard"
+}
