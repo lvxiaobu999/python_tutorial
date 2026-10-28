@@ -30,7 +30,7 @@ async def job(name: str, seconds: float, flaky: bool = False) -> str:
     await asyncio.sleep(seconds)  # 模拟网络 IO：此刻线程可以去跑别的协程
     if flaky:  # 默认关闭，演示 1/2/3 保持可复现；想模拟失败时传 flaky=True
         n = random.randint(0, 99)  # 随机 int
-        if n % 7 == 0:  # 能被 3 整除（含 0，约 1/3 概率）→ 请求失败
+        if n % 7 == 0:  # 能被 7 整除（含 0，约 1/7 概率）→ 请求失败
             raise RequestError(f"{name} 请求失败（随机数 {n} 被 7 整除）")
     print(f"{name} 结束 @{time.perf_counter() - T0:.2f}s")
     return f"{name}完成"
@@ -86,7 +86,7 @@ asyncio.run(guarded())
 # ============ 演示 4：捕获单个失败（练习 4 热身） ============
 # 协程里的异常和普通函数一样向上传播，到 await 它的那一行，try/except 照常能抓。
 async def flaky_demo() -> None:
-    for i in range(3):  # 多跑几次，约 1/3 概率失败，感受随机性
+    for i in range(3):  # 多跑几次，约 1/7 概率失败，感受随机性
         try:
             print(await job(f"F{i}", 0.2, flaky=True))
         except RequestError as e:
@@ -104,6 +104,7 @@ print("============ 练习答案验证 ============")
 #   b. await asyncio.sleep(0.5) 模拟网络延迟。
 #   c. 返回 f"{url} 的页面内容(200 OK)"。
 async def fake_fetch(url: str) -> str:
+    print(f"开始抓取 {url}")  # TODO 1a：串行/并发的时序差异，全靠这行观察
     await asyncio.sleep(0.5)
     return f"{url} 的页面内容(200 OK)"
 
@@ -130,7 +131,9 @@ async def fetch_serial(urls: list[str]) -> list[str]:
 
 
 t2 = time.perf_counter()
-results = asyncio.run(fetch_serial(["https://a.com", "https://b.com", "https://c.com"]))
+results = asyncio.run(
+    fetch_serial(["https://a.com", "https://b.com", "https://c.com"])
+)
 print(f"串行耗时 {time.perf_counter() - t2:.2f} 秒")
 print(results)
 
@@ -153,6 +156,7 @@ results3 = asyncio.run(
 )
 print(f"并行耗时 {time.perf_counter() - t3:.2f} 秒")
 print(results3)
+print("结论：串行耗时 ≈ 单次延迟 × 任务数；并发耗时 ≈ 最慢单个任务（等待被共享了）")
 
 # ============ 练习 4（选做）：异常与超时 ============
 # TODO 4：
@@ -185,7 +189,7 @@ try:
         run_task_group(["https://a.com", "https://b.com", "https://c.com"])
     )
     print(results4)
-except ExceptionGroup as eg:
+except* TimeoutError as eg:
     # TaskGroup 抛的是 ExceptionGroup（可能同时包多个 TimeoutError），
-    # 普通 except TimeoutError 接不住，要用 3.11+ 的 except* 语法
+    # 普通 except TimeoutError 接不住；except* 按组内异常「类型」拆包，只抓超时这一种
     print(f"{len(eg.exceptions)} 个请求超时：{eg.exceptions}")
