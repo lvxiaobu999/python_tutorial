@@ -20,7 +20,7 @@ def log(message: str) -> None:
 
 
 log(f"单价：{price(100, 4)}")  # 25.0
-log(f"传 float 也能跑：{price(100, 2)}")  # 40.0 —— 注解说 count 是 int，
+log(f"传 float 也能跑：{price(100, 2.5)}")  # 40.0 —— count 注解是 int，
 # 传 float 运行时不报错（要靠 pyright 抓）
 
 
@@ -44,7 +44,7 @@ print(average(table, "小刚"))  # None
 # ============ 演示 3：Literal 与 Callable/Iterable ============
 def sort_items(items: list[int], order: Literal["asc", "desc"] = "asc") -> list[int]:
     """Literal：order 只允许这两个字符串，写错工具立刻标红。"""
-    return sorted(items, reverse=order == "desc22")
+    return sorted(items, reverse=order == "desc")
 
 
 def apply(func: Callable[[int, int], int], a: int, b: int) -> int:
@@ -91,7 +91,7 @@ movie: Movie = {"title": "流浪地球", "rating": 8.0}
 # movie["titel"]  # ← 键名写错，pyright 会直接标红；纯运行时则抛 KeyError
 
 
-print("============ 联系答案验证 ============")
+print("============ 练习答案验证 ============")
 
 
 # ============ 练习 1：给无注解函数补全类型 ============
@@ -109,7 +109,7 @@ def top_scores(scores: list[float]) -> list[float]:
     return sorted(scores, reverse=True)[:3]
 
 
-def banner(title, width=20) -> None:
+def banner(title: str, width: int = 20) -> None:
     print(f"{title:^{width}}")
 
 
@@ -149,13 +149,34 @@ print(transpose([[1, 2], [3, 4]]))
 #   b. peek() -> T；is_empty() -> bool；__len__ -> int（呼应 02.1）。
 # 验证：Stack[str] 压入 "a"、"b"，pop 出 "b"；len 为 1。
 class Stack[T]:
-    list: list[T] = []
+    def __init__(self) -> None:
+        self.items: list[T] = []  # 每个实例自己的列表。不能写成类属性 list: list[T] = []：
+        # ① 类属性被所有实例共享（可变默认值的坑）；② 属性名 list 遮蔽内置类型
 
     def push(self, item: T) -> None:
-        self.list.append(item)
+        self.items.append(item)
 
-    def pop(self, item: T) -> None:
-        self.list.remove(item)
+    def pop(self) -> T:
+        # 后进先出：弹出栈顶并返回；list.pop() 空列表自带 IndexError，正好满足要求
+        return self.items.pop()
+
+    def peek(self) -> T:
+        if self.is_empty():
+            raise IndexError("peek from empty stack")
+        return self.items[-1]  # 看栈顶但不弹出
+
+    def is_empty(self) -> bool:
+        return len(self.items) == 0
+
+    def __len__(self) -> int:
+        return len(self.items)
+
+
+stack: Stack[str] = Stack()  # 显式标注泛型：T 确定为 str
+stack.push("a")
+stack.push("b")
+print(stack.pop())  # b —— 后进先出
+print(len(stack))  # 1
 
 
 # ============ 练习 4：Literal + 静态检查 ============
@@ -170,4 +191,4 @@ def set_mode(mode: Literal["dev", "prod"]) -> None:
     pass
 
 
-set_mode("dev")
+set_mode("up")  # 故意传非法值：运行时能跑（函数体是 pass），pyright 会标红 —— 4b/4c 要观察的
