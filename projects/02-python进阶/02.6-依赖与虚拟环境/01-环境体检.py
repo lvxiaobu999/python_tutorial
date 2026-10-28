@@ -48,12 +48,22 @@ def main() -> None:
     print("     观察第 4 部分多了哪些包；再打开 pyproject.toml 看它们进了哪个组。")
 
 
+# 运行指令 uv run python projects\02-python进阶\02.6-依赖与虚拟环境\01-环境体检.py
 if __name__ == "__main__":
     main()
 
 # ============ TODO（按 02.6 README 完成后在下面写答案） ============
 # TODO 2：运行 uv tree，把输出里 pytest 的依赖树抄到这里（注释形式）：
-#
+
 # TODO 3：用自己的话回答（写在注释里，每题 1~2 句）：
 #   a. 为什么 uv.lock 要提交进 git，而 .venv 不要？
+###
+# 因为uv.lock文件可以确保团队引用的包锁定到同一个版本，避免出现差异导致bug出现。
+# 而.venv是虚拟环境，里面存入大量的依赖包，导致文件体积很大，不宜存放到远程git
+# ###
+
 #   b. dependencies 和 dependency-groups.dev 有什么区别？ruff 该放哪个？
+#   dependencies是生成环境所需依赖包
+#   dependency-groups.dev是开发环境所需依赖包
+#
+# #
