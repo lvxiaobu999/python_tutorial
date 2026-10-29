@@ -10,5 +10,10 @@
     // Pylance 类型检查强度：off（默认，不检查）/ basic / standard / strict
     // standard：传错类型的参数会画黄色波浪线，问题面板同步报错
     "python.analysis.typeCheckingMode": "standard",
+    // 默认 Python 解释器：指向 03-fastapi基础 的 venv（fastapi 装在这里）。
+    // 注意两点：
+    // ① 只在「从未手动选过解释器」时生效；手动选择过则以手动选择为准（存于 VSCode 内部状态，不在此文件）。
+    // ② 换到别的模块（如 02 有自己的 .venv）时，用 Ctrl+Shift+P → Python: Select Interpreter 切过去。
+    "python.defaultInterpreterPath": "${workspaceFolder}/projects/03-fastapi基础/.venv/Scripts/python.exe",
     "python-envs.defaultEnvManager": "ms-python.python:system"
 }

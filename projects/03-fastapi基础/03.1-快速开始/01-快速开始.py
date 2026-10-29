@@ -5,9 +5,12 @@
 运行（不能用 python 直接跑！它只会定义 app，不会起服务）：
     uv run fastapi dev "03.1-快速开始/01-快速开始.py"
 然后浏览器打开 http://127.0.0.1:8000/docs 边看边学。
+
+修复报错from fastapi import FastAPI 无法解析导入“fastapi”
+Ctrl+Shift+P → Python: Select Interpreter → 选 .\\projects\\03-fastapi基础\\.venv\\Scripts\\python.exe（只需这一次）
 """
 
-from fastapi import FastAPI  # type: ignore[reportMissingImports]
+from fastapi import FastAPI
 
 app = FastAPI(title="我的第一个 API")  # title 会显示在 /docs 页面标题上
 
