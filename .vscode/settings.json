@@ -9,5 +9,6 @@
     "editor.formatOnPaste": true,
     // Pylance 类型检查强度：off（默认，不检查）/ basic / standard / strict
     // standard：传错类型的参数会画黄色波浪线，问题面板同步报错
-    "python.analysis.typeCheckingMode": "standard"
+    "python.analysis.typeCheckingMode": "standard",
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }
