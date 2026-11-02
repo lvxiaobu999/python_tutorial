@@ -96,13 +96,13 @@ def create_detailed_book(book: DetailedBookIn) -> dict:
 #   03.4~03.6 和期末大作业都会复用这个模型。
 class BookCreate(BaseModel):
     title: str = Field(min_length=1, description="标题")
-    anthor: str = Field(min_length=1, description="作者")
-    price: float = Field(ge=0, description="价格")
-    rating: float = Field(ge=1, le=5, description="评分 1~5 星")
+    author: str = Field(min_length=1, description="作者")  # 订正：原来拼成 anthor，字段名就是 JSON 里的 key，后面章节要复用
+    price: float = Field(gt=0, description="价格")  # 订正：ge=0 允许 0 元，题目要求"必须 > 0"→ 用 gt（大于）
+    rating: float = Field(ge=0, le=5, description="评分 0~5")  # 订正：题目要求 0 ≤ x ≤ 5，原来 ge=1 会把 0.5 分也拦掉
 
 
 @app.post("/books-v2")
-def create_book(book: BookCreate):
+def create_book_v2(book: BookCreate):
     """创建书本商品"""
     return book.model_dump()
 
@@ -112,11 +112,17 @@ def create_book(book: BookCreate):
 #   分别试「不传 / 传 null / 传 "李四"」三种请求体，观察三种结果的差异。
 
 
-class BookCreate2(BookCreate, BaseModel):
-    borrowed_by: str | None = Field()
+class BookCreate2(BookCreate):  # 订正：去掉多余的 BaseModel——BookCreate 本身就继承自它，字段会全部带过来
+    # 订正：Field() 不写 default = "没给默认值" → 字段反而变必填（已实测：不传 → 422 Field required）
+    # 可选字段的正确写法就是普通默认值 None，和 in_stock: bool = True 同理
+    borrowed_by: str | None = None
 
 
 @app.post("/books-v3")
-def create_book(book: BookCreate2):
-    """创建书本商品2"""
+def create_book_v3(book: BookCreate2):  # 订正：原来与上面两个函数都叫 create_book，重名会互相遮蔽（路由已注册不影响运行，但排查问题时容易看错）
+    """创建书本商品2。三种请求体预期结果：
+    ① 不传 borrowed_by → 200，返回里 borrowed_by: null
+    ② 传 "borrowed_by": null → 200，同样是 null（null 就是在显式地说"值是空"）
+    ③ 传 "borrowed_by": "李四" → 200，返回 "李四"
+    只有传非字符串（如 123）才会 422"""
     return book.model_dump()
