@@ -42,7 +42,7 @@ class ReviewIn(BaseModel):
 def create_review(review: ReviewIn) -> dict:
     """rating 传 6 → 422；content 传 "太短" → 422。
     读错误响应里的 loc（哪个字段）和 msg（什么规则）。"""
-    return {"收到": review.model_dump()}
+    return review.model_dump()
 
 
 # ============ 演示 3：嵌套模型：模型套模型 ============
@@ -69,14 +69,54 @@ def create_detailed_book(book: DetailedBookIn) -> dict:
 # ============ TODO 1：读 422（本章最重要的肌肉记忆） ============
 # 用 /docs 给演示 2 发一个 rating=6，把 422 响应里的 loc 和 msg 抄到下面这个注释里：
 
+"""
+{
+  "detail": [
+    {
+      "type": "less_than_equal",
+      "loc": [
+        "body",
+        "rating"
+      ],
+      "msg": "Input should be less than or equal to 5",
+      "input": 6,
+      "ctx": {
+        "le": 5
+      }
+    }
+  ]
+}
+"""
+
 
 # ============ TODO 2：图书模型——期末大作业的核心资产 ============
 # 定义 BookCreate：title（str，min_length=1）、author（str，min_length=1）、
 #   price（float，必须 > 0）、rating（float，0 ≤ x ≤ 5），
 #   加 POST /books-v2 接收它，返回 book.model_dump()。
 #   03.4~03.6 和期末大作业都会复用这个模型。
+class BookCreate(BaseModel):
+    title: str = Field(min_length=1, description="标题")
+    anthor: str = Field(min_length=1, description="作者")
+    price: float = Field(ge=0, description="价格")
+    rating: float = Field(ge=1, le=5, description="评分 1~5 星")
+
+
+@app.post("/books-v2")
+def create_book(book: BookCreate):
+    """创建书本商品"""
+    return book.model_dump()
 
 
 # ============ TODO 3：可选字段的三种请求 ============
 # 给 BookCreate 加可选字段 borrowed_by: str | None = None，
 #   分别试「不传 / 传 null / 传 "李四"」三种请求体，观察三种结果的差异。
+
+
+class BookCreate2(BookCreate, BaseModel):
+    borrowed_by: str | None = Field()
+
+
+@app.post("/books-v3")
+def create_book(book: BookCreate2):
+    """创建书本商品2"""
+    return book.model_dump()
