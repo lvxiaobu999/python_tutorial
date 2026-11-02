@@ -8,6 +8,7 @@
 """
 
 from typing import Annotated
+from urllib.parse import quote, unquote
 
 from fastapi import Cookie, FastAPI, Header, Response, status
 from pydantic import BaseModel
@@ -54,7 +55,12 @@ def whoami(
 ) -> dict:
     """Header() 把 user_agent 映射到 HTTP 头 User-Agent（下划线即连字符）。
     先访问 /login 种下 Cookie，再回来访问 /whoami 看 session_id 出现。"""
-    return {"user_agent": user_agent, "session_id": session_id}
+    # session_id 到手的是 percent-encoded 形式（如 %E6%88%91…），用 unquote 还原中文
+    return {
+        "user_agent": user_agent,
+        "session_id": session_id,
+        "session_id_解码": unquote(session_id) if session_id else None,
+    }
 
 
 # ============ 演示 4：写 Cookie——给函数加 Response 参数 ============
@@ -70,11 +76,38 @@ def login(response: Response) -> dict:
 #   函数里返回带内部字段的数据（比如 cost 进价），用 response_model 把 cost 滤掉。
 
 
+class BookOut(BaseModel):
+    """响应模型：只声明允许出现在响应里的字段——没有 cost。"""
+
+    title: str
+    author: str
+    rating: float
+
+
+@app.get("/books-secret", response_model=BookOut)
+def get_books_secret() -> dict:
+    """返回的数据带内部字段 price / cost，response_model 只放行 title / author / rating。"""
+    return {"title": "肖申克", "author": "晓晓", "rating": 4.5, "price": 5, "cost": 10}
+
+
 # ============ TODO 2：状态码 ============
 # 写 POST /books-secret，接收 BookOut 同结构的请求体，创建成功返回 201；
 #   到 /docs 看这个接口文档里预期的响应码显示成了什么。
 
 
+@app.post("/books-secret", response_model=BookOut, status_code=status.HTTP_201_CREATED)
+def create_books_secret(book: BookOut) -> dict:
+    return book.model_dump()
+
+
 # ============ TODO 3：Cookie 闭环 ============
 # 依次访问 /login → /whoami，确认 session_id 出现；
 #   再打开浏览器 DevTools → Application → Cookies，亲眼看到这个 Cookie。
+@app.post("/login", status_code=status.HTTP_201_CREATED)
+def login2(response: Response) -> str:
+    """
+    登录之后，生成Cookie session_id
+    """
+
+    response.set_cookie("session_id", quote("我是波仔啊"))
+    return "登录成功"
