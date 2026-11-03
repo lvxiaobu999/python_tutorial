@@ -258,10 +258,14 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
+    { name = "pydantic" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "fastapi", extras = ["standard"], specifier = ">=0.162.0" }]
+requires-dist = [
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.162.0" },
+    { name = "pydantic", specifier = ">=2.14.1" },
+]
 
 [[package]]
 name = "fastapi-cli"

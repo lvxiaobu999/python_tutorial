@@ -10,6 +10,7 @@ HTTPException 覆盖 90% 场景；自定义异常 + 异常处理器应对业务�
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 app = FastAPI(title="03.6 错误处理练习")
 
@@ -68,12 +69,39 @@ def catalog_get(book_id: int) -> dict:
 # ============ TODO 1：删除接口 ============
 # 写 DELETE /books/{book_id}：书存在 → 删除并返回 204（提示：status_code=status.HTTP_204_NO_CONTENT，函数返回 None）；
 #   不存在 → 抛 404。删掉的书再查一次，确认真的没了。
+@app.delete("/books/{book_id}")
+def del_book_by_id(book_id: int):
+    if book_id not in fake_books:
+        raise HTTPException(status_code=404, detail="书不存在")
+
+    del fake_books[book_id]
+    return fake_books
 
 
 # ============ TODO 2：业务异常 ============
 # 自定义 PriceTooHighError，写 POST /books-checked 接收 {"title": str, "price": float}：
 #   price > 1000 时抛出，并注册异常处理器。
 #   处理器返回哪个状态码由你决定（422 或 400？），在下面写一句你的理由：
+
+
+class PriceTooHighError(HTTPException):
+    """业务专属异常：含义自解释，抛的时候不用记状态码。"""
+
+    pass
+
+
+class BooksCheck(BaseModel):
+    title: str
+    price: float
+
+
+@app.post("/books-checked")
+def books_checked(params: BooksCheck):
+    price = params.price
+    if price > 1000:
+        raise PriceTooHighError(status_code=400, detail="价格不能超过1000")
+
+    return params.model_dump()
 
 
 # ============ TODO 3：验收彩排 ============
