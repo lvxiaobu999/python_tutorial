@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, status
-from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 app = FastAPI(title="04.1 数据库集成练习")
@@ -27,6 +26,9 @@ class BookBase(SQLModel):
     author: str = Field(min_length=1)
     price: float = Field(gt=0)
     rating: float = Field(ge=0, le=5)
+    # TODO 3 的实验字段：用 Alembic 迁移把它补进已有表（README 有实操记录）。
+    # 必须可空（= None）：老表里已有的书没有这个值，NOT NULL 且无默认值的新列加不上去
+    published_year: int | None = Field(default=None)
 
 
 class Book(BookBase, table=True):
@@ -80,12 +82,24 @@ def create_book(data: BookCreate, session: SessionDep) -> Book:
     return book
 
 
-# ============ 演示 5：查列表——分页交给数据库 ============
+# ============ 演示 5：查列表——过滤与分页都交给数据库（TODO 1 完成版）============
 @app.get("/books")
-def list_books(session: SessionDep, skip: int = 0, limit: int = 10) -> list[Book]:
-    """/books?skip=0&limit=10：offset/limit 翻译成 SQL 的 OFFSET/LIMIT——
-    是数据库挑行，不是把全表拉回 Python 再切片（数据量大时差别是性能）。"""
-    return session.exec(select(Book).offset(skip).limit(limit)).all()
+def list_books(
+    session: SessionDep,
+    skip: int = 0,
+    limit: int = 10,
+    author: str | None = None,  # 「= None」不能省：省了它 author 会从可选参数变成必填
+) -> list[Book]:
+    """?author=张三 → SQL 里多一个 WHERE；不传 → 查全部。
+    offset/limit 翻译成 SQL 的 OFFSET/LIMIT——是数据库挑行，
+    不是把全表拉回 Python 再切片（数据量大时差别是性能）。"""
+    query = select(Book)
+    if author is not None:
+        # select 的各方法都返回「新的查询对象」，必须接住返回值，不能只写 query.where(...)
+        query = query.where(Book.author == author)
+    # .offset/.limit 排在 .where 后面：先筛选再翻页，顺序反了分页会错位
+    # .all() 的静态类型是 Sequence[Book]，包一层 list() 兑现 list[Book] 的注解承诺
+    return list(session.exec(query.offset(skip).limit(limit)).all())
 
 
 # ============ 演示 6：查单个 + 404——03.6 的 HTTPException 上岗 ============
@@ -109,52 +123,38 @@ def delete_book(book_id: int, session: SessionDep) -> None:
     session.commit()
 
 
-# ============ TODO 1：按作者过滤 ============
-# 给 GET /books 加可选查询参数 author: str | None = None：
-#   传了就给 select(Book) 追加 .where(Book.author == author)，不传保持原样；
-#   注意 .offset / .limit 要排在 .where 后面。在 /docs 里观察 author 是不是可选项。
+# ============ TODO 2：PATCH——只改价格（白名单思想，03.4）============
+class PriceUpdate(SQLModel):
+    """小请求模型：只有价格，没有 id/书名——客户端能改什么，由字段清单说了算。"""
 
-
-# ============ TODO 1：按作者过滤 ============
-# 给 GET /books 加可选查询参数 author: str | None = None：
-#   传了就给 select(Book) 追加 .where(Book.author == author)，不传保持原样；
-#   注意 .offset / .limit 要排在 .where 后面。在 /docs 里观察 author 是不是可选项。
-class BookFilter(BaseModel):
-    author: str | None
-
-
-@app.get("/book_lists")
-def get_books(author: str | None, session: SessionDep) -> list[Book]:
-
-    print(f"author -> {author}")
-
-    if author is None:
-        return list(session.exec(select(Book)).all())
-    return list(session.exec(select(Book).where(Book.author == author)))
-
-
-# ============ TODO 2：PATCH /books/{book_id} 只改价格 ============
-# 先写小请求模型 PriceUpdate(price: float = Field(gt=0))——只有价格，没有 id/书名
-#   （白名单思想：客户端能改什么，由字段清单说了算，03.4）。
-#   PATCH 端点：查到 → 只更新 price 后 commit，返回 200 + 更新后的书；查不到 → 404。
-class PriceUpdate(BaseModel):
     price: float = Field(gt=0)
 
 
 @app.patch("/books/{book_id}")
-def update_book(book_id: int, body: PriceUpdate, session: SessionDep):
+def update_book(book_id: int, body: PriceUpdate, session: SessionDep) -> Book:
+    """查到 → 只更新 price 后 commit，返回 200 + 更新后的书；查不到 → 404。"""
     book = session.get(Book, book_id)
     if book is None:
         raise HTTPException(status_code=404, detail="书不存在")
-
+    # 查出来的对象已在 session 里（持久化状态），改属性就被跟踪——add() 是给新对象入队用的，可省
     book.price = body.price
-    session.add(book)  # 入队：改动先记在 session 里
-    session.commit()  # 落库：忘了这步 = 白忙一场，数据没写进文件
-    session.refresh(book)  # 把数据库生成的 id 回填到对象上
+    session.commit()
+    # commit 后 SQLAlchemy 默认 expire_on_commit=True：对象属性被清出内存，
+    # 而 FastAPI 序列化响应直接读对象属性、不触发惰性加载 → 不 refresh 会返回 {}
+    session.refresh(book)
     return book
 
 
-# ============ TODO 3：思考题——create_all 的盲区 ============
+# ============ TODO 3：思考题——create_all 的盲区（答案）============
 # create_all 只补建「不存在的表」：给 BookBase 加个字段 published_year 再重启，
 #   已有表的结构不会变，新字段根本写不进去。生产库里的真实数据怎么改表不丢数据？
 #   这由「迁移工具」回答——README 的 Alembic 速查表先混个脸熟，项目实战章正式上。
+#
+# 【答案】create_all 只会发 CREATE TABLE，表已存在就整个跳过——它永远不发 ALTER TABLE，
+#   所以「改已有表」天然不在它的能力范围。改字段有两种翻车姿势：
+#   ① 字段只加在请求模型：校验照常通过，字段被静默丢弃，看似成功、实际没存；
+#   ② 字段加进表模型：启动不报错（create_all 跳过已有表），第一次 INSERT 才报
+#      OperationalError: no such column——炸弹推迟到运行时。
+#   解法 = 迁移工具（Alembic）：对比「模型定义 vs 数据库现状」，自动生成带版本号的
+#   ALTER TABLE 脚本——改前可人工审查、改错可回滚、数据原地保留。
+#   已提前实操验证：published_year 就是这么补进来的，完整过程见 README 5.1 实操记录。
