@@ -1,0 +1,7 @@
+# 数据库文件不入库（04.1 运行时自动生成 books.db）
+*.db
+# Python 运行产物
+__pycache__/
+.pytest_cache/
+# 虚拟环境
+.venv/

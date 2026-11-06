@@ -14,7 +14,7 @@
     // 注意两点：
     // ① 只在「从未手动选过解释器」时生效；手动选择过则以手动选择为准（存于 VSCode 内部状态，不在此文件）。
     // ② 换到别的模块（如 02 有自己的 .venv）时，用 Ctrl+Shift+P → Python: Select Interpreter 切过去。
-    "python.defaultInterpreterPath": "${workspaceFolder}/projects/03-fastapi基础/.venv/Scripts/python.exe",
+    "python.defaultInterpreterPath": "${workspaceFolder}/projects/04-fastapi进阶/.venv/Scripts/python.exe",
     "python-envs.defaultEnvManager": "ms-python.python:system",
     // 关闭 GitHub Copilot 行内代码补全："*" 表示所有语言，false 即禁用
     // （这只关掉"幽灵文本"建议，不影响 Copilot Chat 面板，想彻底不用见下方扩展禁用说明）

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>04.5 WebSocket 与流式练习</title>
+  <style>
+    /* 极简样式：两个区块各占一段，能看清消息即可 */
+    body { font-family: sans-serif; max-width: 560px; margin: 24px auto; line-height: 1.6; }
+    section { border: 1px solid #ccc; border-radius: 8px; padding: 8px 16px; margin-bottom: 20px; }
+    ul { min-height: 40px; max-height: 200px; overflow: auto; }
+    input { width: 60%; }
+  </style>
+</head>
+<body>
+  <h1>04.5 WebSocket 与流式</h1>
+
+  <!-- ========== 区块 1：WebSocket 回声（双向长连接） ========== -->
+  <!-- 这里演示：new WebSocket 连 /ws，点发送就 ws.send() 一条，回显从 onmessage 来 -->
+  <section>
+    <h2>1. WebSocket 回声（双向）</h2>
+    <input id="ws-input" placeholder="发一句话给服务器" />
+    <button id="ws-send">发送</button>
+    <ul id="ws-list"></ul>
+  </section>
+
+  <!-- ========== 区块 2：SSE 流式推送（服务器单向推，打字机效果） ========== -->
+  <!-- 这里演示：点按钮建 EventSource 读 /books/stream，服务器每 yield 一条就追加一行 -->
+  <section>
+    <h2>2. SSE 图书流（单向，服务器推）</h2>
+    <button id="sse-btn">开始接收图书流</button>
+    <ul id="sse-list"></ul>
+  </section>
+
+  <script>
+    // 往指定列表追加一条消息的小工具
+    function addMsg(list, text) {
+      const li = document.createElement("li");
+      li.textContent = text;
+      list.appendChild(li);
+    }
+
+    // ========== 区块 1 的逻辑：WebSocket ==========
+    // 浏览器原生 WebSocket API：连上后等服务端 accept()，这里才触发 onopen
+    const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+    const wsList = document.getElementById("ws-list");
+    ws.onopen = () => addMsg(wsList, "[系统] 已连接，发句话试试");
+    // 服务端每 send_text 一次，onmessage 就响一次——双向通道的「收」这一半
+    ws.onmessage = (e) => addMsg(wsList, "服务器：" + e.data);
+    ws.onclose = () => addMsg(wsList, "[系统] 连接已断开（Ctrl+C 停掉服务试试）");
+    document.getElementById("ws-send").onclick = () => {
+      const input = document.getElementById("ws-input");
+      if (input.value) {
+        addMsg(wsList, "我：" + input.value);
+        ws.send(input.value); // send 只管发出，回显从 onmessage 来——双向通道的「发」这一半
+        input.value = "";
+      }
+    };
+
+    // ========== 区块 2 的逻辑：SSE（EventSource） ==========
+    document.getElementById("sse-btn").onclick = () => {
+      const sseList = document.getElementById("sse-list");
+      sseList.innerHTML = "";
+      // EventSource 是浏览器内置的 SSE 客户端：只能 GET，断线还会自动重连
+      const es = new EventSource("/books/stream");
+      // 每个以 \n\n 结尾的 data 块触发一次 onmessage——少写 \n\n 它永远不响
+      es.onmessage = (e) => addMsg(sseList, e.data);
+      es.onerror = () => {
+        addMsg(sseList, "[系统] 流结束/中断，EventSource 默认会自动重连");
+        es.close(); // 演示的流已结束，主动关掉，免得它无限重连刷屏
+      };
+    };
+  </script>
+</body>
+</html>

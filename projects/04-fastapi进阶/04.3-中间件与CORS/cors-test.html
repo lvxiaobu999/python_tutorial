@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!-- CORS 跨域小实验：先启动服务（03-中间件.py），再双击本页用浏览器打开，F12 看效果 -->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>CORS 跨域小实验</title>
+  <style>
+    body { font-family: sans-serif; max-width: 640px; margin: 24px auto; }
+    button { margin: 4px; padding: 8px 14px; }
+    pre { background: #f5f5f5; padding: 12px; white-space: pre-wrap; min-height: 48px; }
+  </style>
+</head>
+<body>
+  <h1>CORS 跨域小实验</h1>
+  <!-- file:// 打开的页面 Origin 是 null，不在服务器白名单里，两个按钮都会被浏览器拦下 -->
+  <p>本页 Origin：<code>null</code>（file:// 打开）；服务器白名单只有 <code>http://localhost:3000</code>。</p>
+  <button id="btn1">按钮 1：简单 GET 请求（不发预检）</button>
+  <button id="btn2">按钮 2：带自定义头（先发 OPTIONS 预检）</button>
+  <pre id="result">（点按钮，结果显示在这里；细节看 F12 的 Console 和 Network）</pre>
+
+<script>
+  // 先运行：uv run fastapi dev "04.3-中间件与CORS/03-中间件.py"
+  // 若终端显示端口是 8001，把这里的 8000 改成 8001
+  const API = "http://127.0.0.1:8000";
+  const out = document.getElementById("result");
+
+  // 按钮 1：简单请求——浏览器直接发出，收到响应后再检查有没有 Access-Control-Allow-Origin
+  document.getElementById("btn1").onclick = async () => {
+    out.textContent = "请求中……";
+    try {
+      const r = await fetch(API + "/books");      // 跨源：浏览器自动带上 Origin: null
+      const data = await r.json();                // 没被拦才会走到这里
+      out.textContent = "成功：" + JSON.stringify(data, null, 2);
+    } catch (e) {
+      // 典型报错：...has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header...
+      out.textContent = "失败（被浏览器拦截，接口可能其实返回了 200）：" + e.message;
+    }
+  };
+
+  // 按钮 2：X-Custom-Token 不在简单头名单里 → 浏览器先发 OPTIONS 预检问服务器「让不让」
+  document.getElementById("btn2").onclick = async () => {
+    out.textContent = "请求中……（去 F12 → Network 看那条先发出来的 OPTIONS）";
+    try {
+      const r = await fetch(API + "/books", { headers: { "X-Custom-Token": "abc" } });
+      out.textContent = "成功：" + JSON.stringify(await r.json(), null, 2);
+    } catch (e) {
+      out.textContent = "失败：预检没通过（OPTIONS 得到 400 Disallowed CORS origin）";
+    }
+  };
+</script>
+</body>
+</html>

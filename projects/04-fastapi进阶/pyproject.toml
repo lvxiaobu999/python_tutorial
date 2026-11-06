@@ -1,0 +1,15 @@
+[project]
+name = "fastapi-advanced"
+version = "0.1.0"
+description = "模块 04 · FastAPI 进阶练习（数据库/认证/中间件/后台任务/流式/测试部署）"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.20.1",
+    "bcrypt>=5.0.0",
+    "fastapi[standard]>=0.162.0",
+    "httpx>=0.28.1",
+    "pyjwt>=2.15.1",
+    "pytest>=9.2.0",
+    "python-multipart>=0.0.33",
+    "sqlmodel>=0.0.48",
+]

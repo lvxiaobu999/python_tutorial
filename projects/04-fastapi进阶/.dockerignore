@@ -1,0 +1,8 @@
+# .dockerignore：docker build 打包「构建上下文」时的排除清单（类比 .gitignore）。
+# 作用有两个：减小上下文上传体积；防止 COPY . . 这类宽拷贝把垃圾带进镜像。
+# 必须排除 .venv：几百 MB 的 Windows 虚拟环境拷进 Linux 容器既跑不了又巨肥——
+# 容器里的依赖由 Dockerfile 里的 uv sync 重新安装，本地这份根本用不上。
+.venv
+__pycache__
+*.db
+*.md
