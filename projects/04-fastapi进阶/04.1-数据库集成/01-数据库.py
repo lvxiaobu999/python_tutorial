@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, status
+from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 app = FastAPI(title="04.1 数据库集成练习")
@@ -113,10 +114,45 @@ def delete_book(book_id: int, session: SessionDep) -> None:
 #   传了就给 select(Book) 追加 .where(Book.author == author)，不传保持原样；
 #   注意 .offset / .limit 要排在 .where 后面。在 /docs 里观察 author 是不是可选项。
 
+
+# ============ TODO 1：按作者过滤 ============
+# 给 GET /books 加可选查询参数 author: str | None = None：
+#   传了就给 select(Book) 追加 .where(Book.author == author)，不传保持原样；
+#   注意 .offset / .limit 要排在 .where 后面。在 /docs 里观察 author 是不是可选项。
+class BookFilter(BaseModel):
+    author: str | None
+
+
+@app.get("/book_lists")
+def get_books(author: str | None, session: SessionDep) -> list[Book]:
+
+    print(f"author -> {author}")
+
+    if author is None:
+        return list(session.exec(select(Book)).all())
+    return list(session.exec(select(Book).where(Book.author == author)))
+
+
 # ============ TODO 2：PATCH /books/{book_id} 只改价格 ============
 # 先写小请求模型 PriceUpdate(price: float = Field(gt=0))——只有价格，没有 id/书名
 #   （白名单思想：客户端能改什么，由字段清单说了算，03.4）。
 #   PATCH 端点：查到 → 只更新 price 后 commit，返回 200 + 更新后的书；查不到 → 404。
+class PriceUpdate(BaseModel):
+    price: float = Field(gt=0)
+
+
+@app.patch("/books/{book_id}")
+def update_book(book_id: int, body: PriceUpdate, session: SessionDep):
+    book = session.get(Book, book_id)
+    if book is None:
+        raise HTTPException(status_code=404, detail="书不存在")
+
+    book.price = body.price
+    session.add(book)  # 入队：改动先记在 session 里
+    session.commit()  # 落库：忘了这步 = 白忙一场，数据没写进文件
+    session.refresh(book)  # 把数据库生成的 id 回填到对象上
+    return book
+
 
 # ============ TODO 3：思考题——create_all 的盲区 ============
 # create_all 只补建「不存在的表」：给 BookBase 加个字段 published_year 再重启，
