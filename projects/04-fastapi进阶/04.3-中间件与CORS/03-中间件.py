@@ -126,8 +126,10 @@ async def add_process_request_id(
 
 
 @app.get("/state")
-def get_state(request: Request):
-    return {"uuid": request.state.request_id}
+def get_state(request: Request) -> dict:
+    """验证 request.state 能往里带数据：request_id 是最外层中间件在入向放出来的。
+    它应当与本次响应头 X-Request-ID 相同——同一次请求，两头对得上，日志就能串联。"""
+    return {"request_id": request.state.request_id}
 
 
 # ============ TODO 3：思考题（不用写代码） ============
