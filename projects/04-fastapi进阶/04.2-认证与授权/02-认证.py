@@ -81,7 +81,8 @@ def register(body: RegisterIn) -> dict:
 
 def create_token(username: str) -> str:
     """payload 只放「谁」（sub）和「活到几点」（exp）——绝不放密码等敏感信息。"""
-    payload = {"sub": "zhangsan", "exp": int(time.time()) + ACCESS_TOKEN_EXPIRE}
+    # sub 必须是「正在登录的那个人」：写死成库里没有的名字，谁都过不了 get_current_user 的查库
+    payload = {"sub": username, "exp": int(time.time()) + ACCESS_TOKEN_EXPIRE}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -121,7 +122,6 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
 @app.get("/me")
 def me(user: Annotated[dict, Depends(get_current_user)]) -> dict:
     """先点右上角 Authorize 登录再访问：OAuth2 → decode → 查库 → 返回你。"""
-    time.sleep(1)
     return user
 
 
