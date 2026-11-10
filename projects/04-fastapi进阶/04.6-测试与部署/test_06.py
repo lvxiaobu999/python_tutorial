@@ -11,7 +11,7 @@
 1. -v 输出里每个 test_ 函数占一行 PASSED——测试名本身就是一行行为说明；
 2. 故意改坏一个断言（比如把 201 改成 200）再跑，pytest 会打印 assert 的
    左右两边——定位失败不靠猜；
-3. 全套 10 条测试不到一秒：这就是 TestClient 不起服务器的好处。
+3. 全套 12 条测试一秒出头：这就是 TestClient 不起服务器的好处。
 """
 
 import importlib.util
@@ -19,6 +19,8 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine
 
 # ============ 0、加载被测模块：文件名 import 不了，只能按路径手动加载 ============
 # 「06-测试与部署」以数字开头、带连字符，不是合法的 Python 标识符，
@@ -26,6 +28,7 @@ from fastapi.testclient import TestClient
 # import 的本质：找到文件 → 执行一遍 → 拿到它创建的命名空间。
 _APP_PATH = Path(__file__).with_name("06-测试与部署.py")
 _spec = importlib.util.spec_from_file_location("books_app", _APP_PATH)
+assert _spec is not None and _spec.loader is not None  # 类型收窄（TS 的 ! 非空断言同款）：路径写死存在，运行时不会是 None
 books_app = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(books_app)
 
@@ -121,8 +124,70 @@ def test_create_rejects_bad_prices(client, bad_price):
 #      整体换成「返回测试 session」的函数——这是 Depends（03.5）的测试专属技能：
 #      业务代码一行不改，就能把真数据库偷换成测试数据库；
 #   3. 写完同样断言链路：创建 → 查询 200 → 删除 → 查询 404。
+_DB_APP_PATH = Path(__file__).parent.parent / "04.1-数据库集成" / "01-数据库.py"
+_db_spec = importlib.util.spec_from_file_location("db_books_app", _DB_APP_PATH)
+assert _db_spec is not None and _db_spec.loader is not None  # 同上：类型收窄，兼当「文件必须在」的自检
+db_app = importlib.util.module_from_spec(_db_spec)
+_db_spec.loader.exec_module(db_app)
+
+
+@pytest.fixture()
+def db_client():
+    """数据库版测试：把 04.1 的真库（books.db 文件）整体偷换成内存库。
+
+    与 reset_books() 的对比：这里每个测试都新建引擎、新内存库，「空书架」是天然
+    的——新库本身就干净，不需要手动清数据。
+    两个配置缺一就翻车：
+    1. StaticPool：内存库默认每条连接各开一个空库，而 FastAPI 的 def 路由跑在
+       线程池、每个请求可能换线程——不共用连接，建好的表在别的线程「看不见」；
+    2. check_same_thread=False：SQLite 默认禁止跨线程复用连接（04.1 的老坑）。
+    """
+    test_engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(test_engine)
+
+    def get_test_session():
+        with Session(test_engine) as session:
+            yield session
+
+    # 依赖覆盖：业务代码零改动，get_session 被「整体换角」成测试 session
+    db_app.app.dependency_overrides[db_app.get_session] = get_test_session
+    with TestClient(db_app.app) as c:
+        yield c
+    db_app.app.dependency_overrides.clear()  # 拆除覆盖，不污染别的测试
+
+
+def test_db_create_list_delete_chain(db_client):
+    """断言链路：创建 201 → 列表 200 含它 → 删除 204 → 详情 404。
+    请求打的是 04.1 的 app，数据却落在一个活不过本测试的内存库里。"""
+    resp = db_client.post("/books", json=BOOK)
+    assert resp.status_code == 201
+    book_id = resp.json()["id"]
+    assert resp.json()["title"] == "三体"
+
+    resp = db_client.get("/books")
+    assert resp.status_code == 200  # 注意：04.1 返回裸数组 list[Book]，不像 06 那样包 {"books": [...]}
+    assert [b["title"] for b in resp.json()] == ["三体"]
+
+    assert db_client.delete(f"/books/{book_id}").status_code == 204
+    assert db_client.get(f"/books/{book_id}").status_code == 404
 
 # ============ TODO 2：故意写一条必失败的测试，跑红再修绿（体验 TDD） ============
 # 比如 test_list_books_sorted_by_price：期望 GET /books?sort=price 按价格升序
 # 返回书——app 还没有 sort 参数，先跑一遍必红；再去实现它，跑到绿。
 # 红（测试失败）→ 写实现 → 绿（测试通过）：先写测试再写实现，就是 TDD 的循环。
+def test_list_books_sorted_by_price(client):
+    """先写下「期望的行为」：sort=price 时按价格升序返回。
+    app 还不认识 sort 参数（FastAPI 对未知查询参数不报错、直接忽略），
+    所以此刻必红；去 06-测试与部署.py 实现后，由红转绿。"""
+    client.post("/books", json={**BOOK, "title": "贵书", "price": 99.0})
+    client.post("/books", json={**BOOK, "title": "贱书", "price": 9.9})
+    client.post("/books", json={**BOOK, "title": "中书", "price": 30.0})
+
+    resp = client.get("/books", params={"sort": "price"})
+    assert resp.status_code == 200
+    titles = [b["title"] for b in resp.json()["books"]]
+    assert titles == ["贱书", "中书", "贵书"]  # 红：现在是登记顺序 [贵书, 贱书, 中书]

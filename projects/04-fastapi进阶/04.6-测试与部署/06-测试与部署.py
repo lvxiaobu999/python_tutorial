@@ -41,9 +41,16 @@ def reset_books() -> None:
 
 # ============ 2、路由：GET /books——图书列表 ============
 @app.get("/books")
-def list_books() -> dict:
-    """最普通的查询，默认返回 200（03.2 路由）。"""
-    return {"books": list(books.values())}
+def list_books(sort: str | None = None) -> dict:
+    """最普通的查询，默认返回 200（03.2 路由）。
+    sort=price 时按价格升序——为让 test_list_books_sorted_by_price 由红转绿而加（TDD）：
+    测试先定义了行为，实现是照着测试补的。"""
+    result = list(books.values())
+    if sort == "price":
+        result.sort(
+            key=lambda b: b["price"]
+        )  # 就地排的是「副本」，模块级 books 不受影响
+    return {"books": result}
 
 
 # ============ 3、路由：POST /books——创建图书（201 Created，03.4 的状态码） ============
