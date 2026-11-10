@@ -87,7 +87,7 @@ def borrow_book(book_id: int, tasks: BackgroundTasks, to: str = "admin@ex.com") 
 # 新增 POST /books-fixed：同样的「发通知」，但用 tasks.add_task 挪到后台，
 #   用 /docs 或 curl -w "%{time_total}" 对比它和 /books-slow 的响应耗时差多少。
 @app.post("/books-fixed")
-def books_fixed(title: str, to: str, tasks: BackgroundTasks) -> dict:
+def create_book_fixed(title: str, to: str, tasks: BackgroundTasks) -> dict:
     tasks.add_task(send_notification, to, title)
     return {"message": "图书已创建", "title": title}
 
@@ -97,24 +97,25 @@ def books_fixed(title: str, to: str, tasks: BackgroundTasks) -> dict:
 #   发一封「删除通知」（复用 send_notification，想想 to 和书名该传什么）。
 @app.delete("/books/{book_id}")
 def del_book(book_id: int, tasks: BackgroundTasks) -> dict:
-    book = BOOKS.get(book_id, None)
+    book = BOOKS.get(book_id)  # get 默认返回 None，第二个参数可省
     if book is None:
         raise HTTPException(status_code=404, detail="图书不存在")
-
     del BOOKS[book_id]
-
-    print(BOOKS)
-
+    # 登记任务时参数当场求值：局部变量 book 还引用着字典对象，
+    # 所以「先删再登记」也能取到书名（登记的是值，不是「到时候去 BOOKS 里找」）
     tasks.add_task(send_notification, "游客", book["title"])
-    return {"code": 1, "id": book_id, "message": "删除成功"}
+    return {"deleted": book_id, "message": "删除成功"}
 
 
 # ============ TODO 3：思考题（不写代码，先想再翻 README） ============
 # 服务重启时，正在排队/执行中的 BackgroundTasks 会怎样？任务有记录、能重试吗？
 #   想清楚这一点，再去看 README 的 Celery 概念指南——那就是为补这些短板而生。
-
-##
 #
-# 由于后台任务是存放在reddis / RabbitMQ等服务中，重启任务不会影响后台任务的执行
-#
-# #
+# 【答案】BackgroundTasks 是「进程内的待办清单」：add_task 只是把函数和参数记在
+#   当前进程的内存里，响应发完后由同一个进程顺手执行。
+#   → 服务重启：排队中 / 执行中的任务直接丢失，无记录、无重试、无持久化。
+#   要「重启不丢、失败重试、多机分担」，得把任务挪出进程——这就是 Celery 的位置：
+#   任务写进 Redis / RabbitMQ 这样的中转仓库（broker），由独立的 worker 进程
+#   领取执行，失败可重试、有记录可查。
+#   ⚠️ 「任务存放在 Redis/RabbitMQ，重启不影响执行」是 Celery 的特性，
+#   对本章的 BackgroundTasks 不成立——两者的本质分界就在「任务住在哪个进程」。
