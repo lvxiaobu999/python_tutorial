@@ -41,7 +41,7 @@
 
     // ========== 区块 1 的逻辑：WebSocket ==========
     // 浏览器原生 WebSocket API：连上后等服务端 accept()，这里才触发 onopen
-    const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+    const ws = new WebSocket("ws://127.0.0.1:8000/ws/chat");
     const wsList = document.getElementById("ws-list");
     ws.onopen = () => addMsg(wsList, "[系统] 已连接，发句话试试");
     // 服务端每 send_text 一次，onmessage 就响一次——双向通道的「收」这一半

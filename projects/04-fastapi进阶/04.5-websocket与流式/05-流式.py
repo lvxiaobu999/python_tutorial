@@ -46,9 +46,15 @@ async def book_stream():
     """async 生成器 = 02.3 的 yield + 02.5 的 await 合体：
     每准备好一小块就 yield 一块，立刻发往浏览器，绝不攒齐再给。
     未来 LangChain 流式对话，就是把这里的 asyncio.sleep 换成模型吐 token。"""
+
+    count = 0
     for title in BOOKS:
-        await asyncio.sleep(0.5)  # 模拟「生成一条」的耗时（真实场景：查库/调模型卡在这步）
+        await asyncio.sleep(
+            0.5
+        )  # 模拟「生成一条」的耗时（真实场景：查库/调模型卡在这步）
+        count += 1
         yield f"data: 《{title}》\n\n"  # SSE 格式：data: 开头，\n\n 两个换行才是一条消息的终点
+    yield f"data: 共《{count}》本 \n\n"
 
 
 @app.get("/books/stream")
@@ -71,6 +77,52 @@ def demo_page() -> FileResponse:
 # 写一个 ConnectionManager 类：connect() 收编连接、disconnect() 移除、broadcast() 群发；
 # 再加 @app.websocket("/ws/chat")：收到消息后 broadcast 给所有连接——
 # 一个人发言全场可见，简易聊天室就成了。
+class ConnectionManager:
+    """聊天室中枢：维护「当前在线的所有连接」。
+
+    WebSocket 只能一对一说话；「群发」= 自己攥着一份连接名单，挨个 send。
+    三个方法对应一段连接的生命周期：接入登记 → 在线群发 → 断开销户。
+    """
+
+    def __init__(self) -> None:
+        self.active: list[WebSocket] = (
+            []
+        )  # 在线名册：群发要「挨个说话」，就得攥着每条连接
+
+    async def connect(self, ws: WebSocket) -> None:
+        await ws.accept()  # 握手挪进 connect：从这走進来的连接保证都已点头生效
+        self.active.append(ws)
+        print(f"→ [CHAT] 客户端接入，当前在线 {len(self.active)} 人")
+
+    def disconnect(self, ws: WebSocket) -> None:
+        # 同步方法：列表增删不需要 await；只有「说话」（accept/send）才是异步的
+        self.active.remove(ws)
+        print(f"← [CHAT] 客户端断开，当前在线 {len(self.active)} 人")
+
+    async def broadcast(self, text: str) -> None:
+        # 遍历副本（.copy()）：await 的间隙可能有人断线销户，正遍历的名单被动过会乱套
+        for ws in self.active.copy():
+            await ws.send_text(text)
+
+
+manager = (
+    ConnectionManager()
+)  # 模块级单例（04.1 engine 的老套路）：全应用共享一份在线名单
+
+
+@app.websocket("/ws/chat")
+async def chat(ws: WebSocket) -> None:
+    """简易聊天室：任何人发言，全场（包括发言者自己）都能收到。
+    断线处理沿用演示 1：receive 抛 WebSocketDisconnect 是「正常下班」，销户再广播一声。"""
+    await manager.connect(ws)
+    try:
+        while True:
+            text = await ws.receive_text()
+            await manager.broadcast(text)
+    except WebSocketDisconnect:
+        manager.disconnect(ws)
+        await manager.broadcast("（一位朋友离开了聊天室）")
+
 
 # ============ TODO 2：带总数的 SSE ============
 # 给 /books/stream 升级：书名照推，流末尾再补一条 data: 共 5 本\n\n，
