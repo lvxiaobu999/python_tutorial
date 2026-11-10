@@ -86,13 +86,35 @@ def borrow_book(book_id: int, tasks: BackgroundTasks, to: str = "admin@ex.com") 
 # ============ TODO 1：把反例改成正版 ============
 # 新增 POST /books-fixed：同样的「发通知」，但用 tasks.add_task 挪到后台，
 #   用 /docs 或 curl -w "%{time_total}" 对比它和 /books-slow 的响应耗时差多少。
+@app.post("/books-fixed")
+def books_fixed(title: str, to: str, tasks: BackgroundTasks) -> dict:
+    tasks.add_task(send_notification, to, title)
+    return {"message": "图书已创建", "title": title}
 
 
 # ============ TODO 2：删除图书 + 异步「删除通知」 ============
 # 加 DELETE /books/{book_id}：不存在抛 404（03.6 的写法），删除成功后用后台任务
 #   发一封「删除通知」（复用 send_notification，想想 to 和书名该传什么）。
+@app.delete("/books/{book_id}")
+def del_book(book_id: int, tasks: BackgroundTasks) -> dict:
+    book = BOOKS.get(book_id, None)
+    if book is None:
+        raise HTTPException(status_code=404, detail="图书不存在")
+
+    del BOOKS[book_id]
+
+    print(BOOKS)
+
+    tasks.add_task(send_notification, "游客", book["title"])
+    return {"code": 1, "id": book_id, "message": "删除成功"}
 
 
 # ============ TODO 3：思考题（不写代码，先想再翻 README） ============
 # 服务重启时，正在排队/执行中的 BackgroundTasks 会怎样？任务有记录、能重试吗？
 #   想清楚这一点，再去看 README 的 Celery 概念指南——那就是为补这些短板而生。
+
+##
+#
+# 由于后台任务是存放在reddis / RabbitMQ等服务中，重启任务不会影响后台任务的执行
+#
+# #
