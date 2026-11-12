@@ -5,13 +5,13 @@
 ## 章节清单
 
 | 章节 | 主题 |
-|------|------|
-| 04.1 数据库集成 | SQLAlchemy / SQLModel、迁移（Alembic） |
-| 04.2 认证与授权 | JWT、OAuth2、密码哈希、依赖保护路由 |
-| 04.3 中间件与 CORS | 自定义中间件、跨域配置 |
-| 04.4 后台任务与队列 | BackgroundTasks、Celery/RQ |
-| 04.5 WebSocket 与流式 | WebSocket、SSE 流式响应 |
-| 04.6 测试与部署 | TestClient、pytest、Docker、Uvicorn/Gunicorn |
+| ------ | ------ |
+| [04.1 数据库集成](04.1-数据库集成.md) | SQLAlchemy / SQLModel、迁移（Alembic） |
+| [04.2 认证与授权](04.2-认证与授权.md) | JWT、OAuth2、密码哈希、依赖保护路由 |
+| [04.3 中间件与 CORS](04.3-中间件与CORS.md) | 自定义中间件、跨域配置 |
+| [04.4 后台任务与队列](04.4-后台任务与队列.md) | BackgroundTasks、Celery/RQ |
+| [04.5 WebSocket 与流式](04.5-websocket与流式.md) | WebSocket、SSE 流式响应 |
+| [04.6 测试与部署](04.6-测试与部署.md) | TestClient、pytest、Docker、Uvicorn/Gunicorn |
 
 ## 学习要点
 
@@ -25,7 +25,7 @@
 
 ## 笔记文件命名
 
-```
+```text
 04.1-数据库集成.md
 04.2-认证与授权.md
 04.5-websocket与流式.md

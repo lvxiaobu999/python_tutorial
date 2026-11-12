@@ -6,12 +6,12 @@
 
 | 章节 | 主题 |
 |------|------|
-| 03.1 快速开始 | 安装、第一个 API、自动文档（/docs、/redoc） |
-| 03.2 路由 | 路径参数、查询参数、请求体、APIRouter |
-| 03.3 Pydantic 模型 | BaseModel、字段类型与校验、嵌套模型 |
-| 03.4 响应模型 | response_model、状态码、Header/Cookie |
-| 03.5 依赖注入 | Depends、依赖复用、依赖链 |
-| 03.6 错误处理 | HTTPException、自定义异常处理器 |
+| [03.1 快速开始](03.1-快速开始.md) | 安装、第一个 API、自动文档（/docs、/redoc） |
+| [03.2 路由](03.2-路由.md) | 路径参数、查询参数、请求体、APIRouter |
+| [03.3 Pydantic 模型](03.3-pydantic模型.md) | BaseModel、字段类型与校验、嵌套模型 |
+| [03.4 响应模型](03.4-响应模型.md) | response_model、状态码、Header/Cookie |
+| [03.5 依赖注入](03.5-依赖注入.md) | Depends、依赖复用、依赖链 |
+| [03.6 错误处理](03.6-错误处理.md) | HTTPException、自定义异常处理器 |
 
 ## 学习要点
 

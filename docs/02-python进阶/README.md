@@ -6,13 +6,13 @@
 
 | 章节 | 主题 |
 |------|------|
-| 02.1 面向对象 | 类与实例、继承、多态、魔术方法、dataclass |
-| 02.2 装饰器与闭包 | 闭包、@decorator、常用装饰器 |
-| 02.3 迭代器与生成器 | __iter__、yield、生成器表达式 |
-| 02.4 类型注解 | typing、Optional/Union/Generic、TypeAlias |
-| 02.5 异步编程 | async/await、asyncio、事件循环、并发 vs 并行 |
-| 02.6 依赖与虚拟环境 | pyproject.toml、依赖锁定、可复现构建 |
-| 02.7 测试 | pytest、断言、fixture、mock |
+| [02.1 面向对象](02.1-面向对象.md) | 类与实例、继承、多态、魔术方法、dataclass |
+| [02.2 装饰器与闭包](02.2-装饰器与闭包.md) | 闭包、@decorator、常用装饰器 |
+| [02.3 迭代器与生成器](02.3-迭代器与生成器.md) | __iter__、yield、生成器表达式 |
+| [02.4 类型注解](02.4-类型注解.md) | typing、Optional/Union/Generic、TypeAlias |
+| [02.5 异步编程](02.5-异步编程.md) | async/await、asyncio、事件循环、并发 vs 并行 |
+| [02.6 依赖与虚拟环境](02.6-依赖与虚拟环境.md) | pyproject.toml、依赖锁定、可复现构建 |
+| [02.7 测试](02.7-测试.md) | pytest、断言、fixture、mock |
 
 ## 学习要点
 

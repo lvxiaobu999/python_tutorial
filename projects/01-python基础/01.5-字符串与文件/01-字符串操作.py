@@ -4,6 +4,7 @@
 不会原地改变原来的 text。
 """
 
+# ========== 1、清理与转换方法示例：strip/upper/lower/replace 全部返回新字符串（不可变） ==========
 text = "  Python makes AI   easier  "
 # strip() 去除首尾空白（不会删除中间的空格）。
 clean = text.strip()
@@ -11,10 +12,13 @@ clean = text.strip()
 print(clean.upper())
 # replace(old, new) 将所有匹配的 old 替换为 new。
 print(clean.lower().replace("AI", "人工智能"))
+# ========== 2、切片与成员判断示例：[start:stop] 不含 stop，in 返回 True/False ==========
 # [0:6] 取索引 0~5；len() 返回字符数量。
 print(clean[0:6], len(clean))
 # in 用于判断子字符串是否存在，结果是 True 或 False。
 print(f"文本长度：{len(clean)}，是否包含 Python：{'Python' in clean}")
+
+# ========== 3、split 拆分示例：无参按连续空白拆成列表 ==========
 # 字符串转成数组
 print(text.split())
 # ============ 练习 TODO ============
