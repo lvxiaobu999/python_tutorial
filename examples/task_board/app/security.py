@@ -11,4 +11,30 @@
   任何无效（jwt.InvalidTokenError）向上抛，让调用方决定怎么拒绝
 """
 
-# TODO M2：实现上面 4 个函数
+import time
+
+import bcrypt
+import jwt
+
+from app.config import ACCESS_TOKEN_EXPIRE_SECONDS, ALGORITHM, SECRET_KEY
+
+# 常量不在这里重复定义：config.py 是唯一来源（环境变量优先的开发兜底）。
+# 之前本地定义的 ACCESS_TOKEN_EXPIRE = 2（2 秒过期）是 04.2 做过期实验的调试值，
+# 留在工程里 = 每个测试都在和过期赛跑，必须删。
+
+
+def hash_password(plain):
+    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return bcrypt.checkpw(plain.encode(), hashed.encode())
+
+
+def create_token(username: str) -> str:
+    payload = {"sub": username, "exp": int(time.time()) + ACCESS_TOKEN_EXPIRE_SECONDS}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token) -> dict:
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
