@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "大作业 · 团队任务看板 API（examples 首个工程形态项目：01-04 全知识点综合验收）"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.20.1",
     "bcrypt>=5.0.0",
     "fastapi[standard]>=0.162.0",
     "httpx>=0.28.1",
