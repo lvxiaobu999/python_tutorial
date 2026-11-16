@@ -49,6 +49,17 @@ class RegisterIn(SQLModel):
 
 
 class UserPublic(SQLModel):
+    """「出门白名单」：用户是什么，由这三个字段说了算（03.4）。"""
+
+    # id 敢写 int：能出门的用户都已入库、必有主键——未入库对象（id=None）
+    # 在这里直接被拒（实测验证过），这就是「门口和仓库状态一致」。
     id: int
+
+    # 镜像表列 VARCHAR(50)：出口再验一道。上游（RegisterIn + 库）已保证 ≤50，
+    # 这行是保险不是关口——上游若失控，会在出口 500 而不是静默放出脏数据。
     username: str = Field(max_length=50)
+
+    # 角色值由路由的业务规则写（第一个注册者 admin、其余 member），模型只管形状。
+    # 进阶可选：Literal["admin", "member"] 能把出口锁死并自文档化，
+    # 代价是加第三种角色时要同步改这里——现阶段 str 足够。
     role: str
