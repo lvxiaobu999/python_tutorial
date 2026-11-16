@@ -16,4 +16,19 @@
 
 from fastapi import APIRouter
 
+from app.database import SessionDep
+from app.models import User
+from app.schemas import RegisterIn
+from app.security import hash_password
+
 router = APIRouter(tags=["users"])
+
+
+@router.post("/register")
+def register(body: RegisterIn, session: SessionDep):
+    hash_pws = hash_password(body.password)
+    user = User.model_validate(body)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
