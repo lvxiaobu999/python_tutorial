@@ -1,0 +1,18 @@
+[project]
+name = "task-board"
+version = "0.1.0"
+description = "大作业 · 团队任务看板 API（examples 首个工程形态项目：01-04 全知识点综合验收）"
+requires-python = ">=3.13"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "fastapi[standard]>=0.162.0",
+    "httpx>=0.28.1",
+    "pyjwt>=2.15.1",
+    "python-multipart>=0.0.33",
+    "sqlmodel>=0.0.48",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
