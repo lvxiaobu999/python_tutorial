@@ -14,15 +14,24 @@
 - /me 的返回类型标注 UserPublic——password_hash 就算在内存里也绝不出口（03.4 白名单）。
 """
 
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 
 from app.database import SessionDep
 from app.models import User
 from app.schemas import RegisterIn, UserPublic
-from app.security import hash_password
+from app.security import create_token, hash_password, verify_password
 
 router = APIRouter(tags=["users"])
+
+# 登录反枚举（思路保留）：用户不存在时也跑一次同成本真验证，
+# 攻击者无法靠响应耗时区分「账号不存在」和「密码错误」。
+# 算法必须与 verify_password 一致（bcrypt）——内嵌 $argon2id$ 格式会被
+# bcrypt.checkpw 拒绝解析（ValueError → 500），故 import 时现算一条保格式合法。
+_DUMMY_PASSWORD_HASH = hash_password("not-a-real-account-placeholder")
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -51,9 +60,46 @@ def register(body: RegisterIn, session: SessionDep) -> UserPublic:
 
     session.add(user)  # 入队（04.1 老三样）
     session.commit()  # 落库；id 由数据库自增生成
-    session.refresh(user)  # commit 后属性被清出内存，回填 id 等（04.1 expire_on_commit 坑）
+    session.refresh(
+        user
+    )  # commit 后属性被清出内存，回填 id 等（04.1 expire_on_commit 坑）
     # 出口显式转换：User 表对象 → UserPublic 响应模型（白名单逐字段挑）。
     # 为什么不直接 return user？FastAPI 运行时确实会按返回注解隐式过滤，
     # 但 Pylance 是静态检查、只认继承关系——User 和 UserPublic 互不隶属，
     # 「User 不可分配给 UserPublic」就是这么来的。model_validate 一行两边都认。
     return UserPublic.model_validate(user)
+
+
+@router.post("/login")
+def login(
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: SessionDep,
+) -> dict[str, str]:
+    """登录：表单进（OAuth2 规范，/docs 的 Authorize 按钮同款格式）→ 验密 → 发 token。
+
+    与 register 的三个不同：
+    - 入参是 OAuth2PasswordRequestForm（表单 key=value，不是 JSON）；
+    - 查询必须「执行」：session.exec(query).first()——select() 只建查询不执行，
+      原稿把查询对象当用户用，password_hash 属性根本不存在；
+    - verify_password 返回 bool，判「假」用 if not，不是 is None。
+    """
+    user = session.exec(select(User).where(User.username == form.username)).first()
+
+    if user is None:
+        # 耗时对齐：对占位哈希跑一次真验证（结果弃用），再 401——反枚举
+        verify_password(form.password, _DUMMY_PASSWORD_HASH)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",  # 与密码错的提示一致，不给攻击者线索
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not verify_password(form.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 规格形状：conftest 取 .json()["access_token"]；token_type 固定 "bearer"（OAuth2 规范）
+    return {"access_token": create_token(form.username), "token_type": "bearer"}
