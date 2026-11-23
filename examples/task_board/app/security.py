@@ -36,5 +36,11 @@ def create_token(username: str) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def decode_token(token) -> dict:
-    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+def decode_token(token: str) -> str:
+    """验签 + 验过期，成功返回 sub（用户名）；任何无效向上抛，让调用方决定怎么拒绝。
+
+    jwt.decode 自带两道岗：签名对不上、exp 过了期，都会抛 jwt.InvalidTokenError
+    （过期是它的子类 ExpiredSignatureError）——这里不 catch，是 deps.py 的职责。
+    """
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    return payload["sub"]  # 我们签发的 token 一定带 sub；没有它就该当无效处理

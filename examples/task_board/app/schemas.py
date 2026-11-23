@@ -63,3 +63,22 @@ class UserPublic(SQLModel):
     # 进阶可选：Literal["admin", "member"] 能把出口锁死并自文档化，
     # 代价是加第三种角色时要同步改这里——现阶段 str 足够。
     role: str
+
+
+class BoardCreate(SQLModel):
+    """POST /boards 请求体——门口只放客户端允许提交的 name。"""
+
+    # 长度对齐 board 表列 VARCHAR(50)，超长 422 在门口拦下
+    name: str = Field(max_length=50)
+
+
+class BoardPublic(BoardCreate):
+    """看板的对外形状：{id, name}（README API 规格）。
+
+    命名跟随项目惯例 XxxPublic（UserPublic / TaskPublic 同族）：
+    「Public」= 出口形状，与门口的 In / 表模型三兄弟一眼区分开。
+    继承 BoardCreate 复用 name 约束；id 敢写 int，理由同 UserPublic——
+    能出门的板都已入库、必有主键。
+    """
+
+    id: int
